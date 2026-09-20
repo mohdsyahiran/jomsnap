@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JomSnap - Professional Photobooth Services</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <meta name="description" content="Servis photobooth kahwin dan event di Perak, Kuala Lumpur dan Selangor. Setup kemas, cetakan berkualiti dan servis profesional untuk majlis anda oleh JomSnap.">
+</head>
+<body>
+
+    <header>
+        <div
+         class="container">
+            <nav>
+                <a href="index.php" class="logo">
+                    <img src="logo.png" alt="JomSnap logo" class="logo-image">
+                </a>
+                <div class="nav-links">
+                    <a href="#home">Home</a>
+                    <a href="#services">Services</a>
+                    <a href="#packages">Packages</a>
+                    <a href="#contact">Contact</a>
+                </div>
+                <button class="mobile-toggle">&#9776;</button>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+
+        <!-- Hero -->
+        <section class="hero" id="home">
+            <div class="container">
+                <div class="hero-content">
+                    <div class="hero-eyebrow">
+                        <span class="eyebrow-line"></span>
+                        Photobooth Specialists
+                        <span class="eyebrow-line"></span>
+                    </div>
+                    <h1>Capture Every Moment<br><em>With Style</em></h1>
+                    <div class="hero-ornament">✦ &nbsp; ✦ &nbsp; ✦</div>
+                    <p class="hero-description">
+                        Professional photobooth services with seamless setup and high-quality photo prints — for weddings, private events and corporate functions.
+                    </p>
+                    <p class="hero-regions">
+                        <i class="fa-solid fa-location-dot"></i> Perak &nbsp;·&nbsp; Kuala Lumpur &nbsp;·&nbsp; Selangor
+                    </p>
+                    <div class="action-buttons">
+                        <a href="https://wa.me/601161187310" class="btn btn-primary" target="_blank">
+                            <i class="fa-brands fa-whatsapp"></i> Get A Quote
+                        </a>
+                        <a href="#packages" class="btn btn-secondary">
+                            View Packages &nbsp;<i class="fa-solid fa-arrow-down fa-xs"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+            <div class="hero-scroll-indicator">
+                <div class="scroll-line"></div>
+            </div>
+        </section>
+
+        <!-- Stats Strip -->
+        <!-- <section class="stats-strip">
+            <div class="container">
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <span class="stat-number">2</span>
+                        <span class="stat-label">Event Crew</span>
+                    </div>
+                    <div class="stat-divider"></div>
+                    <div class="stat-item">
+                        <span class="stat-number">3</span>
+                        <span class="stat-label">Regions Covered</span>
+                    </div>
+                    <div class="stat-divider"></div>
+                    <div class="stat-item">
+                        <span class="stat-number">∞</span>
+                        <span class="stat-label">Photo Prints</span>
+                    </div>
+                    <div class="stat-divider"></div>
+                    <div class="stat-item">
+                        <span class="stat-number">24h</span>
+                        <span class="stat-label">Digital Delivery</span>
+                    </div>
+                </div>
+            </div>
+        </section> -->
+
+        <!-- Service Inclusions -->
+        <section class="inclusions" id="services">
+            <div class="container">
+                <div class="section-header">
+                    <h2>What's Included</h2>
+                    <div class="section-divider"></div>
+                    <p class="section-subtitle">Everything you need for a seamless photobooth experience — all in one package.</p>
+                </div>
+                <div class="inclusions-grid">
+                    <div class="inclusion-item">
+                        <div class="inclusion-icon"><i class="fa-solid fa-camera-retro"></i></div>
+                        <span>High-resolution camera system</span>
+                    </div>
+                    <div class="inclusion-item">
+                        <div class="inclusion-icon"><i class="fa-solid fa-lightbulb"></i></div>
+                        <span>Professional studio lighting</span>
+                    </div>
+                    <div class="inclusion-item">
+                        <div class="inclusion-icon"><i class="fa-solid fa-print"></i></div>
+                        <span>High quality photo printer</span>
+                    </div>
+                    <div class="inclusion-item">
+                        <div class="inclusion-icon"><i class="fa-regular fa-image"></i></div>
+                        <span>Photo frame design — logo, tagline &amp; event date</span>
+                    </div>
+                    <div class="inclusion-item">
+                        <div class="inclusion-icon"><i class="fa-solid fa-hat-wizard"></i></div>
+                        <span>Props and accessories</span>
+                    </div>
+                    <div class="inclusion-item">
+                        <div class="inclusion-icon"><i class="fa-solid fa-display"></i></div>
+                        <span>Live view display during photo capture</span>
+                    </div>
+                    <div class="inclusion-item">
+                        <div class="inclusion-icon"><i class="fa-solid fa-cloud-arrow-up"></i></div>
+                        <span>Digital delivery via secure cloud storage — accessible for 30 days</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Why JomSnap -->
+        <section class="why-us">
+            <div class="container">
+                <div class="section-header light">
+                    <h2>Why Choose JomSnap</h2>
+                    <div class="section-divider"></div>
+                    <p class="section-subtitle">We deliver more than just photos — we create memories that last a lifetime.</p>
+                </div>
+                <div class="why-grid">
+                    <div class="why-card">
+                        <div class="why-icon"><i class="fa-solid fa-camera"></i></div>
+                        <h3>Premium Equipment</h3>
+                        <p>Professional-grade camera and studio lighting for every session, ensuring crisp and beautiful results.</p>
+                    </div>
+                    <div class="why-card">
+                        <div class="why-icon"><i class="fa-solid fa-palette"></i></div>
+                        <h3>Custom Frame Design</h3>
+                        <p>Personalised photo frames with your event logo, theme and date — printed and ready on the spot.</p>
+                    </div>
+                    <div class="why-card">
+                        <div class="why-icon"><i class="fa-solid fa-cloud"></i></div>
+                        <h3>Instant Digital Access</h3>
+                        <p>All photos delivered via secure cloud link — guests can download their favourites for up to 30 days.</p>
+                    </div>
+                    <div class="why-card">
+                        <div class="why-icon"><i class="fa-solid fa-user-tie"></i></div>
+                        <h3>Experienced Crew</h3>
+                        <p>Our friendly professional team manages the entire setup so you can focus on enjoying your event.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Packages -->
+        <section class="packages" id="packages">
+            <div class="container">
+                <div class="section-header">
+                    <h2>Photobooth Packages</h2>
+                    <div class="section-divider"></div>
+                    <p class="section-subtitle">Flexible pricing tailored to your event type and location.</p>
+                </div>
+
+                <div class="packages-grid">
+
+                    <!-- Basic -->
+                    <div class="package-card">
+                        <div class="package-header">
+                            <h3>Basic</h3>
+                            <div class="package-duration">2 Hours</div>
+                        </div>
+                        <h4 class="package-price">
+                            <span class="price-old"><span class="currency">RM</span>680</span>
+                            <span class="price-current"><span class="currency">RM</span>580</span>
+                            <span class="per-event">/event</span>
+                        </h4>
+                        <div class="package-features">
+                            <div class="feature"><i class="fa-solid fa-check"></i>2 Hours Service</div>
+                            <div class="feature"><i class="fa-solid fa-check"></i>Unlimited Photo Prints</div>
+                            <div class="feature"><i class="fa-solid fa-check"></i>Backdrop & Props</div>
+                            <div class="feature"><i class="fa-solid fa-check"></i>Digital Copies of All Photos</div>
+                        </div>
+                        <a href="https://wasap.my/601161187310/Hi+Photobooth+Basic" class="btn" target="_blank">
+                            <i class="fa-brands fa-whatsapp"></i> Request Quote
+                        </a>
+                    </div>
+
+                    <!-- Standard (center / featured) -->
+                    <div class="package-card featured">
+                        <div class="badge"><i class="fa-solid fa-star"></i> Recommended</div>
+                        <div class="package-header">
+                            <h3>Standard</h3>
+                            <div class="package-duration">3 Hours</div>
+                        </div>
+                        <h4 class="package-price">
+                            <span class="price-old"><span class="currency">RM</span>790</span>
+                            <span class="price-current"><span class="currency">RM</span>690</span>
+                            <span class="per-event">/event</span>
+                        </h4>
+                        <div class="package-features">
+                            <div class="feature"><i class="fa-solid fa-check"></i>3 Hours Service</div>
+                            <div class="feature"><i class="fa-solid fa-check"></i>Unlimited Photo Prints</div>
+                            <div class="feature"><i class="fa-solid fa-check"></i>Backdrop & Props</div>
+                            <div class="feature"><i class="fa-solid fa-check"></i>Digital Copies of All Photos</div>
+                            <div class="feature"><i class="fa-solid fa-check"></i>Free Guestbook</div>
+                        </div>
+                        <a href="https://wasap.my/601161187310/Hi+Photobooth+Standard" class="btn btn-primary" target="_blank">
+                            <i class="fa-brands fa-whatsapp"></i> Request Quote
+                        </a>
+                    </div>
+
+                    <!-- Premium -->
+                    <div class="package-card">
+                        <div class="package-header">
+                            <h3>Premium</h3>
+                            <div class="package-duration">4 Hours</div>
+                        </div>
+                        <h4 class="package-price">
+                            <span class="price-old"><span class="currency">RM</span>890</span>
+                            <span class="price-current"><span class="currency">RM</span>790</span>
+                            <span class="per-event">/event</span>
+                        </h4>
+                        <div class="package-features">
+                            <div class="feature"><i class="fa-solid fa-check"></i>4 Hours Service</div>
+                            <div class="feature"><i class="fa-solid fa-check"></i>Unlimited Photo Prints</div>
+                            <div class="feature"><i class="fa-solid fa-check"></i>Backdrop & Props</div>
+                            <div class="feature"><i class="fa-solid fa-check"></i>Digital Copies of All Photos</div>
+                            <div class="feature"><i class="fa-solid fa-check"></i>Free Guestbook</div>
+                            <div class="feature"><i class="fa-solid fa-check"></i>Free Kad Kahwin Digital by nikahsanding.com</div>
+                        </div>
+                        <a href="https://wasap.my/601161187310/Hi+Photobooth+Premium" class="btn" target="_blank">
+                            <i class="fa-brands fa-whatsapp"></i> Request Quote
+                        </a>
+                    </div>
+
+                </div>
+
+                <p class="packages-note">
+                    <i class="fa-solid fa-circle-info"></i>
+                    All packages are inclusive of delivery and setup. Additional transport charges may apply for locations outside Perak, Kuala Lumpur and Selangor.
+                </p>
+            </div>
+        </section>
+
+        <!-- Terms & Conditions -->
+        <section class="terms">
+            <div class="container">
+                <div class="section-header light">
+                    <h2>Terms &amp; Conditions</h2>
+                    <div class="section-divider"></div>
+                </div>
+                <div class="terms-content">
+                    <ul>
+                        <li>Booking slots are secured upon deposit confirmation</li>
+                        <li>Deposits are non-refundable</li>
+                        <li>Additional charges may apply for transportation to the location</li>
+                        <li>Extension hours subject to availability</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- Contact -->
+        <section class="contact-section" id="contact">
+            <div class="container">
+                <div class="section-header">
+                    <h2>Let's Make It Happen</h2>
+                    <div class="section-divider"></div>
+                    <p class="section-subtitle">Get a personalised quote for your event — we'd love to hear from you.</p>
+                </div>
+                <div class="contact-cta">
+                    <a href="https://wasap.my/601161187310/Hi+JomSnap" class="btn btn-whatsapp" target="_blank">
+                        <i class="fa-brands fa-whatsapp"></i>
+                        <span>
+                            <strong>Chat on WhatsApp</strong>
+                            <small>+6011-6118 7310</small>
+                        </span>
+                    </a>
+                </div>
+                <div class="contact-socials">
+                    <a href="https://www.instagram.com/jomsnapbooth" class="social-link" target="_blank">
+                        <i class="fa-brands fa-instagram"></i>
+                        <span>@jomsnapbooth</span>
+                    </a>
+                    <div class="social-divider"></div>
+                    <a href="https://www.tiktok.com/@jomsnap" class="social-link" target="_blank">
+                        <i class="fa-brands fa-tiktok"></i>
+                        <span>@jomsnap</span>
+                    </a>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="site-footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-logo">
+                    <img src="logo.png" alt="JomSnap logo" class="logo-image">
+                </div>
+                <p class="footer-tagline">Professional Wedding &amp; Event Photobooth Services</p>
+                <div class="footer-social">
+                    <a href="https://wasap.my/601161187310/Hi+JomSnap" target="_blank" aria-label="WhatsApp">
+                        <i class="fa-brands fa-whatsapp"></i>
+                    </a>
+                    <a href="https://www.instagram.com/jomsnapbooth" target="_blank" aria-label="Instagram">
+                        <i class="fa-brands fa-instagram"></i>
+                    </a>
+                    <a href="https://www.tiktok.com/@jomsnap" target="_blank" aria-label="TikTok">
+                        <i class="fa-brands fa-tiktok"></i>
+                    </a>
+                </div>
+                <p class="footer-copy">JomSnap Booth (TR0336905-T) &nbsp;·&nbsp; &copy; 2026. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>
