@@ -21,13 +21,13 @@ export async function login(_prev: LoginState, form: FormData): Promise<LoginSta
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
-    path: "/",
+    path: "/admin",
     maxAge: SESSION_DAYS * 86400,
   });
-  redirect("/");
+  redirect("/admin");
 }
 
 export async function logout() {
-  (await cookies()).delete(SESSION_COOKIE);
-  redirect("/login");
+  (await cookies()).delete({ name: SESSION_COOKIE, path: "/admin" });
+  redirect("/admin/login");
 }

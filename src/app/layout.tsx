@@ -12,6 +12,7 @@ export const metadata: Metadata = {
   title: "JomSnap Admin",
   description: "Bookings, payments and stock for JomSnap Photobooth Services.",
   robots: { index: false, follow: false },
+  icons: { icon: "/logo.png" },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

@@ -20,7 +20,7 @@ async function AuthedDashboard() {
   // connection() marks this as request-time, since token expiry compares against the clock.
   await connection();
   const session = verifyToken((await cookies()).get(SESSION_COOKIE)?.value);
-  if (!session) redirect("/login");
+  if (!session) redirect("/admin/login");
 
   const initial = await loadSnapshot();
   return (

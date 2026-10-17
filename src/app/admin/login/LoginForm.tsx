@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, useState } from "react";
-import { login, type LoginState } from "../actions";
+import { login, type LoginState } from "../../actions";
 import { Icon, inputClass } from "@/components/ui";
 
 export function LoginForm() {
