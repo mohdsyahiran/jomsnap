@@ -1,9 +1,10 @@
 "use client";
 
 import Image from "next/image";
-import { PACKAGES, STATUS_STYLE } from "@/lib/constants";
-import { balanceOf, formatDate, formatRM, formatTime, paidOf, parseDate, toISODate } from "@/lib/format";
+import { GUESTBOOK_STYLE, PACKAGES, STATUS_STYLE } from "@/lib/constants";
+import { balanceOf, formatDate, formatRM, formatTime, paidOf, parseDate, safeUrl, toISODate } from "@/lib/format";
 import { exportICS } from "@/lib/ics";
+import { stockAlerts, stockLabel } from "@/lib/alerts";
 import { useStore } from "@/lib/store";
 import type { Booking } from "@/lib/types";
 import { Button, Card, Icon, PanelHeader, Pill } from "../ui";
@@ -24,7 +25,7 @@ export function Overview({ onNewBooking, onGoto, onPay }: Props) {
   const lockedValue = sum(locked);
   const collected = sum(locked, paidOf);
   const owing = active.filter((b) => b.status !== "tentative" && balanceOf(b) > 0).sort((a, b) => a.date.localeCompare(b.date));
-  const lowStock = data.stock.filter((s) => s.qty <= s.threshold);
+  const alerts = stockAlerts(data);
 
   return (
     <div className="space-y-5">
@@ -56,14 +57,25 @@ export function Overview({ onNewBooking, onGoto, onPay }: Props) {
           <Pill className="mt-1 self-start bg-secondary-fixed text-on-secondary-fixed">{owing.length} bookings with balance</Pill>
           <KpiFoot left="Earliest event due" right={owing[0] ? formatDate(owing[0].date, { weekday: "short", day: "numeric", month: "short" }) : "—"} rightClass="text-error" />
         </Kpi>
-        <Kpi label="Inventory health" icon={lowStock.length ? "warning" : "inventory"} iconClass={lowStock.length ? "bg-error-container text-error" : "bg-tertiary-fixed text-tertiary"}>
-          <div className={`text-headline-xl sm:text-display font-bold ${lowStock.length ? "text-error" : "text-tertiary"}`}>
-            {lowStock.length ? `${lowStock.length} alert${lowStock.length > 1 ? "s" : ""}` : "All good"}
+        <Kpi
+          label="Stock & guestbooks"
+          icon={alerts.count ? "warning" : "inventory"}
+          iconClass={alerts.count ? "bg-error-container text-error" : "bg-tertiary-fixed text-tertiary"}
+        >
+          <div className={`text-headline-xl sm:text-display font-bold ${alerts.count ? "text-error" : "text-tertiary"}`}>
+            {alerts.count ? `${alerts.count} alert${alerts.count > 1 ? "s" : ""}` : "All good"}
           </div>
-          <p className="text-body-sm text-on-surface-variant mt-1">
-            {lowStock.length ? lowStock.map((s) => `${s.name} (${s.qty} left)`).join(" · ") : "No consumables below reorder level"}
-          </p>
-          <KpiFoot left="Auto-deduct per event" right="Open stock →" rightClass="text-secondary cursor-pointer" onRight={() => onGoto("stock")} />
+          {alerts.count ? (
+            <ul className="text-body-sm text-on-surface-variant mt-1 space-y-0.5">
+              {alerts.lines.slice(0, 3).map((l) => (
+                <li key={l}>{l}</li>
+              ))}
+              {alerts.count > 3 && <li>+{alerts.count - 3} more</li>}
+            </ul>
+          ) : (
+            <p className="text-body-sm text-on-surface-variant mt-1">Media rolls OK, props ready, guestbooks on track</p>
+          )}
+          <KpiFoot left={data.stock.map(stockLabel).join(" · ")} right="Open stock →" rightClass="text-secondary cursor-pointer" onRight={() => onGoto("stock")} />
         </Kpi>
       </div>
 
@@ -207,6 +219,16 @@ function NextEvent({ bookings, now, onPay, onGoto }: { bookings: Booking[]; now:
           <dl className="mt-4 space-y-2 text-body-sm">
             <Row icon="schedule" label={`${formatTime(next.startTime)} – ${formatTime(next.endTime)}`} />
             <Row icon="location_on" label={`${next.venue} · ${next.area}`} />
+            {next.backdrop && <Row icon="wallpaper" label={`Backdrop: ${next.backdrop}`} />}
+            {safeUrl(next.designUrl) && (
+              <div className="flex items-start gap-2">
+                <Icon name="palette" className="text-base text-on-surface-variant mt-0.5" />
+                <a href={safeUrl(next.designUrl)} target="_blank" rel="noopener noreferrer" className="font-semibold text-secondary hover:underline">
+                  Open design (Canva)
+                </a>
+              </div>
+            )}
+            {next.guestbook && <Row icon="menu_book" label={GUESTBOOK_STYLE[next.guestbook.status].label} />}
             <Row
               icon="verified"
               label={balanceOf(next) > 0 ? `Balance ${formatRM(balanceOf(next))} of ${formatRM(next.price)}` : `Paid in full (${formatRM(next.price)})`}

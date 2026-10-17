@@ -39,6 +39,17 @@ export function timeAgo(iso: string, now: number) {
   return `${Math.round(s / 86400)}d ago`;
 }
 
+/** Only http(s) links are ever rendered, so a pasted "javascript:" URL can't run */
+export function safeUrl(url?: string) {
+  if (!url) return undefined;
+  try {
+    const u = new URL(url.trim());
+    return u.protocol === "https:" || u.protocol === "http:" ? u.toString() : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 export function whatsappLink(phone?: string) {
   if (!phone) return undefined;
   const digits = phone.replace(/\D/g, "");

@@ -1,11 +1,16 @@
 // Pure state transitions, shared by the browser and the server actions that persist to Neon
-import { suppliesFor } from "./constants";
+import { PACKAGES, SUPPLIES_PER_EVENT } from "./constants";
 import { formatRM, toISODate, uid } from "./format";
-import type { AdminData, AuditEntry, Booking, Payment, Transaction } from "./types";
+import { DEFAULT_STOCK } from "./seed";
+import type { AdminData, AuditEntry, Booking, GuestbookStatus, Payment, StockItem, Transaction } from "./types";
 
 export type Action =
   | { type: "load"; data: AdminData }
-  | { type: "saveBooking"; booking: Omit<Booking, "id" | "code" | "createdAt" | "payments" | "suppliesDeducted"> & { id?: string } }
+  | {
+      type: "saveBooking";
+      booking: Omit<Booking, "id" | "code" | "createdAt" | "payments" | "suppliesDeducted" | "guestbook"> & { id?: string };
+      guestbookNeeded: boolean;
+    }
   | { type: "deleteBooking"; id: string }
   | { type: "setStatus"; id: string; status: Booking["status"] }
   | { type: "addPayment"; bookingId: string; payment: Omit<Payment, "id"> }
@@ -13,7 +18,8 @@ export type Action =
   | { type: "recordSupplies"; id: string }
   | { type: "adjustStock"; id: string; delta: number; cost?: number }
   | { type: "addTxn"; txn: Omit<Transaction, "id" | "createdAt" | "by"> }
-  | { type: "deleteTxn"; id: string };
+  | { type: "deleteTxn"; id: string }
+  | { type: "setGuestbook"; id: string; status: GuestbookStatus; cost?: number };
 
 /** Who made the change; set on the server from the signed-in session */
 export type Stamped = Action & { by?: string };
@@ -26,8 +32,7 @@ function log(data: AdminData, kind: AuditEntry["kind"], message: string): AuditE
 
 /** Apply (sign = -1) or return (sign = +1) the consumables a booking uses. */
 function moveSupplies(data: AdminData, b: Booking, sign: 1 | -1) {
-  const usage = suppliesFor(b.packageId);
-  return data.stock.map((s) => (usage[s.id] ? { ...s, qty: Math.max(0, s.qty + sign * usage[s.id]) } : s));
+  return data.stock.map((s) => (SUPPLIES_PER_EVENT[s.id] ? { ...s, qty: Math.max(0, s.qty + sign * SUPPLIES_PER_EVENT[s.id]) } : s));
 }
 
 export function reducer(data: AdminData, action: Stamped): AdminData {
@@ -41,11 +46,21 @@ export function reducer(data: AdminData, action: Stamped): AdminData {
       if (id) {
         return {
           ...data,
-          bookings: data.bookings.map((b) => (b.id === id ? { ...b, ...fields } : b)),
+          bookings: data.bookings.map((b) =>
+            b.id === id ? { ...b, ...fields, guestbook: action.guestbookNeeded ? (b.guestbook ?? { status: "pending" }) : null } : b,
+          ),
           audit: log(data, "booking", `Updated booking ${fields.client}`),
         };
       }
-      const booking: Booking = { ...fields, id: uid(), code: data.nextCode, payments: [], suppliesDeducted: false, createdAt: new Date().toISOString() };
+      const booking: Booking = {
+        ...fields,
+        id: uid(),
+        code: data.nextCode,
+        payments: [],
+        suppliesDeducted: false,
+        guestbook: action.guestbookNeeded ? { status: "pending" } : null,
+        createdAt: new Date().toISOString(),
+      };
       return {
         ...data,
         bookings: [...data.bookings, booking],
@@ -129,9 +144,15 @@ export function reducer(data: AdminData, action: Stamped): AdminData {
         : [];
       return {
         ...data,
-        stock: data.stock.map((x) => (x.id === s.id ? { ...x, qty: Math.max(0, x.qty + action.delta) } : x)),
+        stock: data.stock.map((x) => (x.id === s.id ? { ...x, qty: clampQty(x, x.qty + action.delta) } : x)),
         transactions: [...data.transactions, ...expense],
-        audit: log(data, "stock", `${s.name} ${action.delta > 0 ? "+" : ""}${action.delta}${action.cost ? ` · cost ${formatRM(action.cost)}` : ""}`),
+        audit: log(
+          data,
+          "stock",
+          s.kind === "available"
+            ? `${s.name} → ${action.delta > 0 ? "available" : "not available"}`
+            : `${s.name} ${action.delta > 0 ? "+" : ""}${action.delta}${action.cost ? ` · cost ${formatRM(action.cost)}` : ""}`,
+        ),
       };
     }
 
@@ -141,6 +162,41 @@ export function reducer(data: AdminData, action: Stamped): AdminData {
         ...data,
         transactions: [...data.transactions, txn],
         audit: log(data, "money", `Money ${txn.type} ${formatRM(txn.amount)} · ${txn.note || txn.category}`),
+      };
+    }
+
+    case "setGuestbook": {
+      const b = data.bookings.find((x) => x.id === action.id);
+      if (!b?.guestbook || b.guestbook.status === action.status) return data;
+      const today = toISODate(new Date());
+      const guestbook = {
+        status: action.status,
+        orderedAt: action.status === "pending" ? undefined : (b.guestbook.orderedAt ?? today),
+        receivedAt: action.status === "received" ? today : undefined,
+      };
+      // Ordering with a cost is also money out
+      const expense: Transaction[] =
+        action.status === "ordered" && action.cost
+          ? [
+              {
+                id: uid(),
+                type: "out",
+                amount: action.cost,
+                date: today,
+                category: "supplies",
+                method: "transfer",
+                note: `Guestbook for #${b.code} ${b.client}`,
+                bookingId: b.id,
+                by: action.by,
+                createdAt: new Date().toISOString(),
+              },
+            ]
+          : [];
+      return {
+        ...data,
+        bookings: data.bookings.map((x) => (x.id === b.id ? { ...x, guestbook } : x)),
+        transactions: [...data.transactions, ...expense],
+        audit: log(data, "stock", `Guestbook #${b.code} ${b.client} → ${action.status}${action.cost ? ` · ${formatRM(action.cost)}` : ""}`),
       };
     }
 
@@ -161,7 +217,24 @@ export function isAdminData(x: unknown): x is AdminData {
   return !!d && d.schemaVersion === 1 && Array.isArray(d.bookings) && Array.isArray(d.stock) && Array.isArray(d.audit) && typeof d.nextCode === "number";
 }
 
-/** Older saves and backups predate the money ledger */
+const clampQty = (s: StockItem, qty: number) => Math.max(0, s.kind === "available" ? Math.min(1, qty) : qty);
+
+type LegacyStock = Partial<StockItem> & { id: string; qty: number };
+
+/**
+ * Brings older saves and backups up to date:
+ * - money ledger added (transactions)
+ * - stock reduced to media rolls + props; ribbon/guestbook stock dropped
+ * - guestbooks tracked per booking (Standard/Premium include one)
+ */
 export function normalize(d: AdminData): AdminData {
-  return { ...d, transactions: Array.isArray(d.transactions) ? d.transactions : [] };
+  const old = (d.stock ?? []) as LegacyStock[];
+  const stock = DEFAULT_STOCK.map((def) => {
+    const prev = old.find((s) => s.id === def.id);
+    return { ...def, ...(prev?.kind ? prev : {}), qty: clampQty(def, prev?.qty ?? def.qty) };
+  });
+  const bookings = d.bookings.map((b) =>
+    b.guestbook !== undefined ? b : { ...b, guestbook: PACKAGES[b.packageId]?.guestbook ? { status: "pending" as const } : null },
+  );
+  return { ...d, stock, bookings, transactions: Array.isArray(d.transactions) ? d.transactions : [] };
 }

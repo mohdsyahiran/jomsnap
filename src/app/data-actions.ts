@@ -2,6 +2,7 @@
 
 import { cookies } from "next/headers";
 import { loadSnapshot, saveSnapshot, type Snapshot } from "@/lib/db";
+import { safeUrl } from "@/lib/format";
 import { isAdminData, normalize, reducer, type Action } from "@/lib/reducer";
 import { SESSION_COOKIE, verifyToken } from "@/lib/session";
 
@@ -22,6 +23,7 @@ const ACTION_TYPES = new Set<Action["type"]>([
   "adjustStock",
   "addTxn",
   "deleteTxn",
+  "setGuestbook",
 ]);
 
 const isMoney = (n: unknown) => typeof n === "number" && Number.isFinite(n) && n >= 0 && n < 10_000_000;
@@ -29,7 +31,9 @@ const isMoney = (n: unknown) => typeof n === "number" && Number.isFinite(n) && n
 function validate(a: Action): string | null {
   if (!a || !ACTION_TYPES.has(a.type)) return "Unknown action";
   if (a.type === "load" && !isAdminData(a.data)) return "Not a JomSnap admin backup";
-  if (a.type === "saveBooking" && (!a.booking?.client || !isMoney(a.booking.price))) return "Invalid booking";
+  if (a.type === "saveBooking" && (!a.booking?.client || !isMoney(a.booking.price) || typeof a.guestbookNeeded !== "boolean")) return "Invalid booking";
+  if (a.type === "saveBooking" && a.booking.designUrl && !safeUrl(a.booking.designUrl)) return "Design link must start with https://";
+  if (a.type === "setGuestbook" && (!["pending", "ordered", "received"].includes(a.status) || (a.cost !== undefined && !isMoney(a.cost)))) return "Invalid guestbook update";
   if (a.type === "addPayment" && !(isMoney(a.payment?.amount) && a.payment.amount > 0)) return "Invalid amount";
   if (a.type === "addTxn" && !(isMoney(a.txn?.amount) && a.txn.amount > 0 && (a.txn.type === "in" || a.txn.type === "out"))) return "Invalid amount";
   if (a.type === "adjustStock" && !(Number.isInteger(a.delta) && Math.abs(a.delta) < 10_000 && (a.cost === undefined || isMoney(a.cost)))) return "Invalid quantity";

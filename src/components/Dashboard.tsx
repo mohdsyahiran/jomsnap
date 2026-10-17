@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { useEffect, useState } from "react";
 import { balanceOf, formatRMShort, timeAgo, toISODate } from "@/lib/format";
+import { stockAlerts } from "@/lib/alerts";
 import { useStore } from "@/lib/store";
 import type { Booking } from "@/lib/types";
 import { logout } from "@/app/actions";
@@ -59,7 +60,7 @@ export function Dashboard({ user }: { user: string }) {
   const today = toISODate(new Date());
   const upcomingCount = data.bookings.filter((b) => b.date >= today && (b.status === "confirmed" || b.status === "tentative")).length;
   const owed = data.bookings.reduce((s, b) => s + (b.status === "tentative" ? 0 : balanceOf(b)), 0);
-  const lowStock = data.stock.some((s) => s.qty <= s.threshold);
+  const lowStock = stockAlerts(data).count > 0;
 
   const badge = (id: TabId, active: boolean) => {
     if (id === "bookings" && upcomingCount)

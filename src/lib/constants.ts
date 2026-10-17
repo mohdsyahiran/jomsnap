@@ -1,4 +1,4 @@
-import type { BookingStatus, PackageId } from "./types";
+import type { BookingStatus, GuestbookStatus, PackageId } from "./types";
 
 // Mirrors the packages section on the public site (index.html)
 export const PACKAGES: Record<PackageId, { label: string; hours: number; price: number; guestbook: boolean }> = {
@@ -16,11 +16,18 @@ export const STATUS_STYLE: Record<BookingStatus, { label: string; className: str
 };
 
 // Consumables used per event when "Record supplies used" is pressed
-export function suppliesFor(packageId: PackageId): Record<string, number> {
-  const usage: Record<string, number> = { "media-4x6": 1, ribbon: 1 };
-  if (PACKAGES[packageId].guestbook) usage.guestbook = 1;
-  return usage;
-}
+export const SUPPLIES_PER_EVENT: Record<string, number> = { "media-4x6": 1 };
+
+/** Guestbooks must be ordered this many days before the event */
+export const GUESTBOOK_LEAD_DAYS = 7;
+/** Start warning this many days before the order-by date */
+export const GUESTBOOK_WARN_DAYS = 3;
+
+export const GUESTBOOK_STYLE: Record<GuestbookStatus, { label: string; className: string }> = {
+  pending: { label: "Guestbook: not ordered", className: "bg-secondary-fixed text-on-secondary-fixed" },
+  ordered: { label: "Guestbook: ordered", className: "bg-surface-container-highest text-on-surface-variant" },
+  received: { label: "Guestbook: received", className: "bg-tertiary-fixed text-on-tertiary-fixed" },
+};
 
 // v2: starts empty (v1 held sample data from the first preview)
 export const STORAGE_KEY = "jomsnap-admin-v2";

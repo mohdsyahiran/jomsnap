@@ -29,7 +29,13 @@ export type Booking = {
   status: BookingStatus;
   payments: Payment[];
   suppliesDeducted: boolean;
+  /** null when this booking has no guestbook (missing only in data saved before guestbooks were tracked) */
+  guestbook?: GuestbookOrder | null;
   notes?: string;
+  /** Backdrop colour/theme, e.g. "Floral white" */
+  backdrop?: string;
+  /** Link to the print/backdrop design (usually Canva) */
+  designUrl?: string;
   createdAt: string;
 };
 
@@ -37,9 +43,20 @@ export type StockItem = {
   id: string;
   name: string;
   unit: string;
+  /** "count": a number with a minimum; "available": we have it (qty 1) or not (qty 0) */
+  kind: "count" | "available";
   qty: number;
-  threshold: number;
-  capacity: number;
+  /** OK when qty >= min */
+  min: number;
+};
+
+export type GuestbookStatus = "pending" | "ordered" | "received";
+
+/** Guestbooks are ordered per event, at least GUESTBOOK_LEAD_DAYS before it */
+export type GuestbookOrder = {
+  status: GuestbookStatus;
+  orderedAt?: string; // YYYY-MM-DD
+  receivedAt?: string; // YYYY-MM-DD
 };
 
 export type AuditEntry = {

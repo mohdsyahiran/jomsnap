@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { PACKAGES } from "@/lib/constants";
+import { GUESTBOOK_LEAD_DAYS, PACKAGES } from "@/lib/constants";
 import { toISODate } from "@/lib/format";
 import { useStore } from "@/lib/store";
 import type { Booking, PackageId } from "@/lib/types";
@@ -39,6 +39,9 @@ function BookingForm({ booking, onDone }: { booking: Booking | null; onDone: () 
     price: booking?.price ?? PACKAGES.standard.price,
     status: booking?.status ?? "tentative",
     notes: booking?.notes ?? "",
+    backdrop: booking?.backdrop ?? "",
+    designUrl: booking?.designUrl ?? "",
+    guestbook: booking ? !!booking.guestbook : PACKAGES.standard.guestbook,
   }));
   const set = <K extends keyof typeof f>(k: K, v: (typeof f)[K]) => setF((p) => ({ ...p, [k]: v }));
 
@@ -47,6 +50,7 @@ function BookingForm({ booking, onDone }: { booking: Booking | null; onDone: () 
     setF((prev) => ({
       ...prev,
       packageId: id,
+      guestbook: id === "custom" ? prev.guestbook : p.guestbook,
       price: id === "custom" ? prev.price : p.price,
       endTime: id === "custom" ? prev.endTime : addHours(prev.startTime, p.hours),
     }));
@@ -54,9 +58,11 @@ function BookingForm({ booking, onDone }: { booking: Booking | null; onDone: () 
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
+    const { guestbook, ...fields } = f;
     dispatch({
       type: "saveBooking",
-      booking: { ...f, id: booking?.id, client: f.client.trim(), venue: f.venue.trim(), price: Number(f.price) || 0, phone: f.phone.trim() || undefined, notes: f.notes.trim() || undefined },
+      guestbookNeeded: guestbook,
+      booking: { ...fields, id: booking?.id, client: f.client.trim(), venue: f.venue.trim(), price: Number(f.price) || 0, phone: f.phone.trim() || undefined, notes: f.notes.trim() || undefined, backdrop: fields.backdrop.trim() || undefined, designUrl: fields.designUrl.trim() || undefined },
     });
     onDone();
   };
@@ -117,6 +123,27 @@ function BookingForm({ booking, onDone }: { booking: Booking | null; onDone: () 
       <Field label="Price (RM)">
         <input required type="number" min={0} step="1" className={inputClass} value={f.price} onChange={(e) => set("price", Number(e.target.value))} />
       </Field>
+      <Field label="Backdrop">
+        <input className={inputClass} value={f.backdrop} onChange={(e) => set("backdrop", e.target.value)} placeholder="e.g. Floral white" />
+      </Field>
+      <Field label="Design (Canva link)">
+        <input
+          type="url"
+          className={inputClass}
+          value={f.designUrl}
+          onChange={(e) => set("designUrl", e.target.value)}
+          placeholder="https://www.canva.com/design/…"
+          pattern="https?://.+"
+          title="Paste the full link, starting with https://"
+        />
+      </Field>
+      <label className="col-span-2 flex items-start gap-2.5 p-3 rounded-lg bg-surface-container-low cursor-pointer">
+        <input type="checkbox" className="mt-0.5 w-4 h-4 accent-[#865225]" checked={f.guestbook} onChange={(e) => set("guestbook", e.target.checked)} />
+        <span className="text-body-sm">
+          <span className="font-semibold text-on-surface">Includes guestbook</span>
+          <span className="block text-on-surface-variant">Needs to be ordered at least {GUESTBOOK_LEAD_DAYS} days before the event. You&apos;ll get a reminder.</span>
+        </span>
+      </label>
       <Field label="Notes" className="col-span-2">
         <textarea rows={2} className={inputClass} value={f.notes} onChange={(e) => set("notes", e.target.value)} placeholder="Backdrop colour, add-ons, transport…" />
       </Field>

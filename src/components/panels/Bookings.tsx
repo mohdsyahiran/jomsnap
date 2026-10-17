@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { PACKAGES, STATUS_STYLE } from "@/lib/constants";
-import { balanceOf, formatRM, formatTime, parseDate, toISODate, whatsappLink } from "@/lib/format";
+import { GUESTBOOK_STYLE, PACKAGES, STATUS_STYLE } from "@/lib/constants";
+import { balanceOf, formatRM, formatTime, parseDate, safeUrl, toISODate, whatsappLink } from "@/lib/format";
 import { exportICS } from "@/lib/ics";
 import { useStore } from "@/lib/store";
 import type { Booking, BookingStatus } from "@/lib/types";
@@ -81,6 +81,7 @@ export function Bookings({ onNew, onEdit, onPay }: { onNew: () => void; onEdit: 
               const d = parseDate(b.date);
               const bal = balanceOf(b);
               const wa = whatsappLink(b.phone);
+              const design = safeUrl(b.designUrl);
               return (
                 <div key={b.id} className="p-4 rounded-xl bg-surface-container-low hover:bg-surface-container transition-colors flex flex-col xl:flex-row xl:items-center justify-between gap-4">
                   <div className="flex items-start sm:items-center gap-4 min-w-0">
@@ -92,6 +93,7 @@ export function Bookings({ onNew, onEdit, onPay }: { onNew: () => void; onEdit: 
                       <div className="flex flex-wrap items-center gap-2">
                         <span className="text-headline-sm font-bold text-primary">{b.client}</span>
                         <Pill className={STATUS_STYLE[b.status].className}>{STATUS_STYLE[b.status].label}</Pill>
+                        {b.guestbook && b.status !== "cancelled" && <Pill className={GUESTBOOK_STYLE[b.guestbook.status].className}>{GUESTBOOK_STYLE[b.guestbook.status].label}</Pill>}
                         <span className="text-label-md text-outline">#{b.code}</span>
                       </div>
                       <p className="text-body-sm text-on-surface-variant truncate">
@@ -102,6 +104,23 @@ export function Bookings({ onNew, onEdit, onPay }: { onNew: () => void; onEdit: 
                         {bal > 0 && b.status !== "tentative" && <span className="text-secondary font-semibold"> · balance {formatRM(bal)}</span>}
                         {b.suppliesDeducted && <span className="text-tertiary"> · supplies recorded</span>}
                       </p>
+                      {(b.backdrop || design) && (
+                        <p className="text-label-md text-on-surface-variant mt-1 flex flex-wrap items-center gap-x-3 gap-y-1">
+                          {b.backdrop && (
+                            <span className="inline-flex items-center gap-1">
+                              <Icon name="wallpaper" className="text-sm" />
+                              {b.backdrop}
+                            </span>
+                          )}
+                          {design && (
+                            <a href={design} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 font-semibold text-secondary hover:underline">
+                              <Icon name="palette" className="text-sm" />
+                              Open design
+                              <Icon name="open_in_new" className="text-xs" />
+                            </a>
+                          )}
+                        </p>
+                      )}
                     </div>
                   </div>
                   <div className="flex flex-wrap items-center gap-1.5 xl:justify-end shrink-0">
