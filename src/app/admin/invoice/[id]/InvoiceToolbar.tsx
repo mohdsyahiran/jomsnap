@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect } from "react";
 import { Icon } from "@/components/ui";
 import { whatsappLink } from "@/lib/format";
 
@@ -8,6 +9,38 @@ type Props = { invoiceNo?: string; client: string; phone?: string; eventDate: st
 
 export function InvoiceToolbar({ invoiceNo, client, phone, eventDate, total, paid, balance }: Props) {
   const wa = whatsappLink(phone);
+
+  useEffect(() => {
+    // Browsers use the title as the PDF file name and in the print header
+    document.title = `Invoice ${invoiceNo ?? "draft"} - ${client}`;
+
+    // The print footer shows the page address; show the public site instead of the private admin link.
+    // The address is restored after printing. Not every browser fires "afterprint" (some mobile ones
+    // don't), so it's also restored when print mode ends or when the page is next used.
+    const adminUrl = window.location.href;
+    const restore = () => {
+      if (window.location.href !== adminUrl) window.history.replaceState(window.history.state, "", adminUrl);
+    };
+    const beforePrint = () => {
+      window.history.replaceState(window.history.state, "", "/");
+      // Runs once the print snapshot is taken (Chrome pauses timers while its print dialog is open)
+      setTimeout(() => window.addEventListener("pointerdown", restore, { once: true }), 0);
+    };
+    const printMedia = window.matchMedia("print");
+    const onPrintMedia = (e: MediaQueryListEvent) => !e.matches && restore();
+    window.addEventListener("beforeprint", beforePrint);
+    window.addEventListener("afterprint", restore);
+    printMedia.addEventListener("change", onPrintMedia);
+    document.addEventListener("visibilitychange", restore);
+    return () => {
+      window.removeEventListener("beforeprint", beforePrint);
+      window.removeEventListener("afterprint", restore);
+      window.removeEventListener("pointerdown", restore);
+      printMedia.removeEventListener("change", onPrintMedia);
+      document.removeEventListener("visibilitychange", restore);
+      restore();
+    };
+  }, [invoiceNo, client]);
   const message = [
     `Hi ${client}, thank you for booking JomSnap Photobooth!`,
     ``,
@@ -35,7 +68,15 @@ export function InvoiceToolbar({ invoiceNo, client, phone, eventDate, total, pai
               WhatsApp client
             </a>
           )}
-          <button type="button" onClick={() => window.print()} className={`${btn} bg-primary text-on-primary`}>
+          <button
+            type="button"
+            onClick={() => {
+              // Switch the address before the print dialog opens: some browsers read it before "beforeprint"
+              window.history.replaceState(window.history.state, "", "/");
+              window.print();
+            }}
+            className={`${btn} bg-primary text-on-primary`}
+          >
             <Icon name="picture_as_pdf" className="text-base" />
             Download PDF / Print
           </button>
