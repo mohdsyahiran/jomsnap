@@ -8,6 +8,7 @@ import { useStore } from "@/lib/store";
 import type { Booking } from "@/lib/types";
 import { logout } from "@/app/actions";
 import { BookingModal } from "./BookingModal";
+import { InvoiceModal } from "./InvoiceModal";
 import { MoneyModal } from "./MoneyModal";
 import { PaymentModal } from "./PaymentModal";
 import { Backup } from "./panels/Backup";
@@ -38,6 +39,7 @@ export function Dashboard({ user }: { user: string }) {
   const { data, savedAt, status } = useStore();
   const [moneyModal, setMoneyModal] = useState<{ open: boolean; type: "in" | "out" }>({ open: false, type: "out" });
   const [moreOpen, setMoreOpen] = useState(false);
+  const [invoiceFor, setInvoiceFor] = useState<Booking | null>(null);
   const [tab, setTab] = useState<TabId>("overview");
   const [bookingModal, setBookingModal] = useState<{ open: boolean; booking: Booking | null }>({ open: false, booking: null });
   const [payModal, setPayModal] = useState<{ open: boolean; id: string | null }>({ open: false, id: null });
@@ -152,10 +154,10 @@ export function Dashboard({ user }: { user: string }) {
         </nav>
 
         {tab === "overview" && <Overview onNewBooking={newBooking} onGoto={goto} onPay={pay} />}
-        {tab === "bookings" && <Bookings onNew={newBooking} onEdit={editBooking} onPay={pay} />}
+        {tab === "bookings" && <Bookings onNew={newBooking} onEdit={editBooking} onPay={pay} onInvoice={setInvoiceFor} />}
         {tab === "money" && <Money onAdd={(type) => setMoneyModal({ open: true, type })} onOpenPayment={(id) => pay(id)} />}
         {tab === "calendar" && <Calendar onEdit={editBooking} />}
-        {tab === "payments" && <Payments onPay={pay} />}
+        {tab === "payments" && <Payments onPay={pay} onInvoice={setInvoiceFor} />}
         {tab === "stock" && <Stock />}
         {tab === "backup" && <Backup />}
       </main>
@@ -226,6 +228,7 @@ export function Dashboard({ user }: { user: string }) {
       )}
 
       <BookingModal open={bookingModal.open} booking={bookingModal.booking} onClose={() => setBookingModal({ open: false, booking: null })} />
+      <InvoiceModal booking={invoiceFor} onClose={() => setInvoiceFor(null)} />
       <MoneyModal open={moneyModal.open} type={moneyModal.type} onClose={() => setMoneyModal((m) => ({ ...m, open: false }))} />
       <PaymentModal open={payModal.open} bookingId={payModal.id} onClose={() => setPayModal({ open: false, id: null })} />
     </div>

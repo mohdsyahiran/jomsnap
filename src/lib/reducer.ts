@@ -8,7 +8,7 @@ export type Action =
   | { type: "load"; data: AdminData }
   | {
       type: "saveBooking";
-      booking: Omit<Booking, "id" | "code" | "createdAt" | "payments" | "suppliesDeducted" | "guestbook"> & { id?: string };
+      booking: Omit<Booking, "id" | "code" | "createdAt" | "payments" | "suppliesDeducted" | "guestbook" | "invoiceNo" | "invoiceDate"> & { id?: string };
       guestbookNeeded: boolean;
     }
   | { type: "deleteBooking"; id: string }
@@ -19,7 +19,8 @@ export type Action =
   | { type: "adjustStock"; id: string; delta: number; cost?: number }
   | { type: "addTxn"; txn: Omit<Transaction, "id" | "createdAt" | "by"> }
   | { type: "deleteTxn"; id: string }
-  | { type: "setGuestbook"; id: string; status: GuestbookStatus; cost?: number };
+  | { type: "setGuestbook"; id: string; status: GuestbookStatus; cost?: number }
+  | { type: "issueInvoice"; id: string; invoiceNo: string };
 
 /** Who made the change; set on the server from the signed-in session */
 export type Stamped = Action & { by?: string };
@@ -197,6 +198,18 @@ export function reducer(data: AdminData, action: Stamped): AdminData {
         bookings: data.bookings.map((x) => (x.id === b.id ? { ...x, guestbook } : x)),
         transactions: [...data.transactions, ...expense],
         audit: log(data, "stock", `Guestbook #${b.code} ${b.client} → ${action.status}${action.cost ? ` · ${formatRM(action.cost)}` : ""}`),
+      };
+    }
+
+    case "issueInvoice": {
+      const b = data.bookings.find((x) => x.id === action.id);
+      const no = action.invoiceNo.trim();
+      // Invoice numbers are unique across bookings
+      if (!b || !no || b.invoiceNo === no || data.bookings.some((x) => x.id !== b.id && x.invoiceNo === no)) return data;
+      return {
+        ...data,
+        bookings: data.bookings.map((x) => (x.id === b.id ? { ...x, invoiceNo: no, invoiceDate: x.invoiceDate ?? toISODate(new Date()) } : x)),
+        audit: log(data, "booking", `Invoice ${no} for #${b.code} ${b.client}`),
       };
     }
 

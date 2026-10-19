@@ -2,17 +2,19 @@
 
 import { useState } from "react";
 import { STATUS_STYLE } from "@/lib/constants";
-import { balanceOf, formatDate, formatRM, formatRM2, paidOf } from "@/lib/format";
+import { balanceOf, formatDate, formatRM, formatRM2, paidOf, totalOf } from "@/lib/format";
+import { canInvoice } from "@/lib/invoice";
 import { useStore } from "@/lib/store";
+import type { Booking } from "@/lib/types";
 import { Button, Card, Empty, Icon, PanelHeader, Pill } from "../ui";
 
-export function Payments({ onPay }: { onPay: (id: string | null) => void }) {
+export function Payments({ onPay, onInvoice }: { onPay: (id: string | null) => void; onInvoice: (b: Booking) => void }) {
   const { data } = useStore();
   const [onlyOwing, setOnlyOwing] = useState(true);
   const active = data.bookings.filter((b) => b.status !== "cancelled");
   const rows = active.filter((b) => !onlyOwing || balanceOf(b) > 0).sort((a, b) => a.date.localeCompare(b.date));
 
-  const totalPrice = active.reduce((s, b) => s + b.price, 0);
+  const totalPrice = active.reduce((s, b) => s + totalOf(b), 0);
   const totalPaid = active.reduce((s, b) => s + paidOf(b), 0);
   const totalOwed = active.reduce((s, b) => s + balanceOf(b), 0);
   const owingCount = active.filter((b) => balanceOf(b) > 0).length;
@@ -62,7 +64,7 @@ export function Payments({ onPay }: { onPay: (id: string | null) => void }) {
               <thead>
                 <tr className="bg-surface-container-low text-outline text-label-sm uppercase">
                   <th className="p-3 rounded-l-lg">Client & event</th>
-                  <th className="p-3 text-right">Package</th>
+                  <th className="p-3 text-right">Total</th>
                   <th className="p-3 text-right">Paid</th>
                   <th className="p-3 text-right">Balance</th>
                   <th className="p-3 text-center rounded-r-lg">Action</th>
@@ -82,7 +84,7 @@ export function Payments({ onPay }: { onPay: (id: string | null) => void }) {
                           #{b.code} · {formatDate(b.date)} · {b.payments.length} payment{b.payments.length === 1 ? "" : "s"}
                         </div>
                       </td>
-                      <td className="p-3 text-right tabular-nums">{formatRM2(b.price)}</td>
+                      <td className="p-3 text-right tabular-nums">{formatRM2(totalOf(b))}</td>
                       <td className="p-3 text-right tabular-nums text-tertiary">{formatRM2(paidOf(b))}</td>
                       <td className="p-3 text-right font-semibold tabular-nums">
                         {bal > 0 ? (
@@ -95,9 +97,16 @@ export function Payments({ onPay }: { onPay: (id: string | null) => void }) {
                         )}
                       </td>
                       <td className="p-3 text-center">
-                        <Button variant={bal > 0 ? "primary" : "soft"} className="px-3 py-1.5" onClick={() => onPay(b.id)}>
-                          {bal > 0 ? "Record" : "History"}
-                        </Button>
+                        <div className="inline-flex gap-1.5">
+                          <Button variant={bal > 0 ? "primary" : "soft"} className="px-3 py-1.5" onClick={() => onPay(b.id)}>
+                            {bal > 0 ? "Record" : "History"}
+                          </Button>
+                          {canInvoice(b) && (
+                            <Button className="px-3 py-1.5" icon="receipt_long" onClick={() => onInvoice(b)}>
+                              {b.invoiceNo ?? "Invoice"}
+                            </Button>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   );

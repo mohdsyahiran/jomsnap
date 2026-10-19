@@ -2,15 +2,16 @@
 
 import { useState } from "react";
 import { GUESTBOOK_STYLE, PACKAGES, STATUS_STYLE } from "@/lib/constants";
-import { balanceOf, formatRM, formatTime, parseDate, safeUrl, toISODate, whatsappLink } from "@/lib/format";
+import { balanceOf, formatRM, formatTime, parseDate, safeUrl, toISODate, totalOf, whatsappLink } from "@/lib/format";
 import { exportICS } from "@/lib/ics";
+import { canInvoice } from "@/lib/invoice";
 import { useStore } from "@/lib/store";
 import type { Booking, BookingStatus } from "@/lib/types";
 import { Button, Card, Empty, Icon, inputClass, PanelHeader, Pill } from "../ui";
 
 type Filter = "upcoming" | "all" | BookingStatus;
 
-export function Bookings({ onNew, onEdit, onPay }: { onNew: () => void; onEdit: (b: Booking) => void; onPay: (id: string) => void }) {
+export function Bookings({ onNew, onEdit, onPay, onInvoice }: { onNew: () => void; onEdit: (b: Booking) => void; onPay: (id: string) => void; onInvoice: (b: Booking) => void }) {
   const { data, dispatch } = useStore();
   const [filter, setFilter] = useState<Filter>("upcoming");
   const [q, setQ] = useState("");
@@ -100,7 +101,8 @@ export function Bookings({ onNew, onEdit, onPay }: { onNew: () => void; onEdit: 
                         {d.toLocaleDateString("en-MY", { weekday: "short" })} · {formatTime(b.startTime)}–{formatTime(b.endTime)} · {b.venue}, {b.area}
                       </p>
                       <p className="text-label-md text-outline mt-0.5">
-                        {b.eventType} · {PACKAGES[b.packageId].label} · {formatRM(b.price)}
+                        {b.eventType} · {PACKAGES[b.packageId].label} · {formatRM(totalOf(b))}
+                        {b.extras?.length ? ` (incl. ${b.extras.map((e) => e.label).join(", ")})` : ""}
                         {bal > 0 && b.status !== "tentative" && <span className="text-secondary font-semibold"> · balance {formatRM(bal)}</span>}
                         {b.suppliesDeducted && <span className="text-tertiary"> · supplies recorded</span>}
                       </p>
@@ -141,6 +143,11 @@ export function Bookings({ onNew, onEdit, onPay }: { onNew: () => void; onEdit: 
                     )}
                     {!b.suppliesDeducted && b.status !== "cancelled" && b.status !== "tentative" && (
                       <IconBtn icon="inventory_2" label="Record supplies used" onClick={() => dispatch({ type: "recordSupplies", id: b.id })} />
+                    )}
+                    {canInvoice(b) && (
+                      <Button icon="receipt_long" onClick={() => onInvoice(b)}>
+                        {b.invoiceNo ? "Invoice" : "Create invoice"}
+                      </Button>
                     )}
                     {wa && <IconBtn icon="chat" label="WhatsApp client" href={wa} />}
                     <IconBtn icon="event" label="Add to calendar (.ics)" onClick={() => exportICS([b], `jomsnap-${b.code}.ics`)} />

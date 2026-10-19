@@ -24,6 +24,7 @@ const ACTION_TYPES = new Set<Action["type"]>([
   "addTxn",
   "deleteTxn",
   "setGuestbook",
+  "issueInvoice",
 ]);
 
 const isMoney = (n: unknown) => typeof n === "number" && Number.isFinite(n) && n >= 0 && n < 10_000_000;
@@ -33,6 +34,13 @@ function validate(a: Action): string | null {
   if (a.type === "load" && !isAdminData(a.data)) return "Not a JomSnap admin backup";
   if (a.type === "saveBooking" && (!a.booking?.client || !isMoney(a.booking.price) || typeof a.guestbookNeeded !== "boolean")) return "Invalid booking";
   if (a.type === "saveBooking" && a.booking.designUrl && !safeUrl(a.booking.designUrl)) return "Design link must start with https://";
+  if (
+    a.type === "saveBooking" &&
+    a.booking.extras !== undefined &&
+    !(Array.isArray(a.booking.extras) && a.booking.extras.length <= 10 && a.booking.extras.every((e) => typeof e?.label === "string" && e.label.trim() && isMoney(e.amount)))
+  )
+    return "Invalid extra charges";
+  if (a.type === "issueInvoice" && !/^[A-Za-z0-9/-]{1,30}$/.test(a.invoiceNo?.trim() ?? "")) return "Invoice number can only use letters, numbers, - and /";
   if (a.type === "setGuestbook" && (!["pending", "ordered", "received"].includes(a.status) || (a.cost !== undefined && !isMoney(a.cost)))) return "Invalid guestbook update";
   if (a.type === "addPayment" && !(isMoney(a.payment?.amount) && a.payment.amount > 0)) return "Invalid amount";
   if (a.type === "addTxn" && !(isMoney(a.txn?.amount) && a.txn.amount > 0 && (a.txn.type === "in" || a.txn.type === "out"))) return "Invalid amount";

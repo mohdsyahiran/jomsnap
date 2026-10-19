@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { GUESTBOOK_STYLE, PACKAGES, STATUS_STYLE } from "@/lib/constants";
-import { balanceOf, formatDate, formatRM, formatTime, paidOf, parseDate, safeUrl, toISODate } from "@/lib/format";
+import { balanceOf, formatDate, formatRM, formatTime, paidOf, parseDate, safeUrl, toISODate, totalOf } from "@/lib/format";
 import { exportICS } from "@/lib/ics";
 import { stockAlerts, stockLabel } from "@/lib/alerts";
 import { useStore } from "@/lib/store";
@@ -20,7 +20,7 @@ export function Overview({ onNewBooking, onGoto, onPay }: Props) {
   const thisYear = active.filter((b) => parseDate(b.date).getFullYear() === year);
   const tentative = thisYear.filter((b) => b.status === "tentative");
   const locked = thisYear.filter((b) => b.status !== "tentative");
-  const sum = (xs: Booking[], f: (b: Booking) => number = (b) => b.price) => xs.reduce((s, b) => s + f(b), 0);
+  const sum = (xs: Booking[], f: (b: Booking) => number = totalOf) => xs.reduce((s, b) => s + f(b), 0);
 
   const lockedValue = sum(locked);
   const collected = sum(locked, paidOf);
@@ -123,8 +123,8 @@ function SalesChart({ bookings, now }: { bookings: Booking[]; now: Date }) {
       const d = parseDate(b.date);
       return d.getFullYear() === m.getFullYear() && d.getMonth() === m.getMonth();
     });
-    const locked = inMonth.filter((b) => b.status !== "tentative").reduce((s, b) => s + b.price, 0);
-    const tentative = inMonth.filter((b) => b.status === "tentative").reduce((s, b) => s + b.price, 0);
+    const locked = inMonth.filter((b) => b.status !== "tentative").reduce((s, b) => s + totalOf(b), 0);
+    const tentative = inMonth.filter((b) => b.status === "tentative").reduce((s, b) => s + totalOf(b), 0);
     return { m, locked, tentative, total: locked + tentative, count: inMonth.length };
   });
   const max = Math.max(1, ...series.map((s) => s.total));
@@ -231,7 +231,7 @@ function NextEvent({ bookings, now, onPay, onGoto }: { bookings: Booking[]; now:
             {next.guestbook && <Row icon="menu_book" label={GUESTBOOK_STYLE[next.guestbook.status].label} />}
             <Row
               icon="verified"
-              label={balanceOf(next) > 0 ? `Balance ${formatRM(balanceOf(next))} of ${formatRM(next.price)}` : `Paid in full (${formatRM(next.price)})`}
+              label={balanceOf(next) > 0 ? `Balance ${formatRM(balanceOf(next))} of ${formatRM(totalOf(next))}` : `Paid in full (${formatRM(totalOf(next))})`}
               className={balanceOf(next) > 0 ? "text-secondary" : "text-tertiary"}
             />
           </dl>

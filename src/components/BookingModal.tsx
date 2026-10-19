@@ -5,7 +5,7 @@ import { GUESTBOOK_LEAD_DAYS, PACKAGES } from "@/lib/constants";
 import { toISODate } from "@/lib/format";
 import { useStore } from "@/lib/store";
 import type { Booking, PackageId } from "@/lib/types";
-import { Button, Field, inputClass, Modal } from "./ui";
+import { Button, Field, Icon, inputClass, Modal } from "./ui";
 
 const EVENT_TYPES: Booking["eventType"][] = ["Wedding", "Engagement", "Corporate", "Birthday", "Other"];
 const AREAS: Booking["area"][] = ["Perak", "Kuala Lumpur", "Selangor", "Other"];
@@ -40,6 +40,7 @@ function BookingForm({ booking, onDone }: { booking: Booking | null; onDone: () 
     status: booking?.status ?? "tentative",
     notes: booking?.notes ?? "",
     backdrop: booking?.backdrop ?? "",
+    extras: booking?.extras ?? [],
     designUrl: booking?.designUrl ?? "",
     guestbook: booking ? !!booking.guestbook : PACKAGES.standard.guestbook,
   }));
@@ -62,7 +63,7 @@ function BookingForm({ booking, onDone }: { booking: Booking | null; onDone: () 
     dispatch({
       type: "saveBooking",
       guestbookNeeded: guestbook,
-      booking: { ...fields, id: booking?.id, client: f.client.trim(), venue: f.venue.trim(), price: Number(f.price) || 0, phone: f.phone.trim() || undefined, notes: f.notes.trim() || undefined, backdrop: fields.backdrop.trim() || undefined, designUrl: fields.designUrl.trim() || undefined },
+      booking: { ...fields, id: booking?.id, client: f.client.trim(), venue: f.venue.trim(), price: Number(f.price) || 0, phone: f.phone.trim() || undefined, notes: f.notes.trim() || undefined, backdrop: fields.backdrop.trim() || undefined, designUrl: fields.designUrl.trim() || undefined, extras: fields.extras.filter((x) => x.label.trim() && x.amount > 0).map((x) => ({ label: x.label.trim(), amount: Number(x.amount) })) },
     });
     onDone();
   };
@@ -123,6 +124,56 @@ function BookingForm({ booking, onDone }: { booking: Booking | null; onDone: () 
       <Field label="Price (RM)">
         <input required type="number" min={0} step="1" className={inputClass} value={f.price} onChange={(e) => set("price", Number(e.target.value))} />
       </Field>
+      <div className="col-span-2 rounded-lg bg-surface-container-low p-3">
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-label-md font-semibold text-on-surface-variant">Extra charges</span>
+          <span className="text-label-md text-on-surface-variant">
+            Total <strong className="text-on-surface tabular-nums">RM {(Number(f.price) + f.extras.reduce((s, x) => s + (Number(x.amount) || 0), 0)).toLocaleString("en-MY")}</strong>
+          </span>
+        </div>
+        <div className="space-y-2">
+          {f.extras.map((x, i) => (
+            <div key={i} className="flex gap-2">
+              <input
+                className={inputClass}
+                value={x.label}
+                placeholder="e.g. Transportation"
+                aria-label="Extra charge description"
+                onChange={(e) => set("extras", f.extras.map((y, j) => (j === i ? { ...y, label: e.target.value } : y)))}
+              />
+              <input
+                type="number"
+                min={0}
+                step="0.01"
+                inputMode="decimal"
+                className={`${inputClass} w-32 shrink-0`}
+                value={x.amount || ""}
+                placeholder="RM"
+                aria-label="Extra charge amount"
+                onChange={(e) => set("extras", f.extras.map((y, j) => (j === i ? { ...y, amount: Number(e.target.value) } : y)))}
+              />
+              <button
+                type="button"
+                aria-label="Remove extra charge"
+                className="w-10 shrink-0 rounded-lg text-outline hover:bg-error-container hover:text-on-error-container"
+                onClick={() => set("extras", f.extras.filter((_, j) => j !== i))}
+              >
+                <Icon name="close" className="text-base" />
+              </button>
+            </div>
+          ))}
+        </div>
+        <div className="flex flex-wrap gap-2 mt-2">
+          {!f.extras.some((x) => x.label === "Transportation") && (
+            <Button className="px-3 py-1.5" icon="local_shipping" onClick={() => set("extras", [...f.extras, { label: "Transportation", amount: 30 }])}>
+              Transportation
+            </Button>
+          )}
+          <Button className="px-3 py-1.5" icon="add" onClick={() => set("extras", [...f.extras, { label: "", amount: 0 }])}>
+            Other charge
+          </Button>
+        </div>
+      </div>
       <Field label="Backdrop">
         <input className={inputClass} value={f.backdrop} onChange={(e) => set("backdrop", e.target.value)} placeholder="e.g. Floral white" />
       </Field>

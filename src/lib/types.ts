@@ -11,6 +11,8 @@ export type Payment = {
   by?: string;
 };
 
+export type Extra = { label: string; amount: number };
+
 export type PayMethod = "transfer" | "cash" | "duitnow" | "other";
 
 export type Booking = {
@@ -36,6 +38,11 @@ export type Booking = {
   backdrop?: string;
   /** Link to the print/backdrop design (usually Canva) */
   designUrl?: string;
+  /** Charges on top of the package, e.g. transportation */
+  extras?: Extra[];
+  /** Set the first time an invoice is issued, e.g. "JS-2026-001" */
+  invoiceNo?: string;
+  invoiceDate?: string; // YYYY-MM-DD
   createdAt: string;
 };
 

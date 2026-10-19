@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { balanceOf, formatDate, formatRM2, paidOf, toISODate } from "@/lib/format";
+import { balanceOf, formatDate, formatRM2, paidOf, toISODate, totalOf } from "@/lib/format";
 import { useStore } from "@/lib/store";
 import type { Payment } from "@/lib/types";
 import { Button, Field, Icon, inputClass, Modal } from "./ui";
@@ -58,8 +58,8 @@ function PaymentForm({ initialId, onDone }: { initialId: string | null; onDone: 
       {booking && (
         <div className="col-span-2 rounded-xl bg-surface-container-low p-3 text-body-sm">
           <div className="flex justify-between">
-            <span className="text-on-surface-variant">Package price</span>
-            <span className="tabular-nums">{formatRM2(booking.price)}</span>
+            <span className="text-on-surface-variant">Total (package + extras)</span>
+            <span className="tabular-nums">{formatRM2(totalOf(booking))}</span>
           </div>
           <div className="flex justify-between">
             <span className="text-on-surface-variant">Paid so far</span>

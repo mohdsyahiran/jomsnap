@@ -28,8 +28,10 @@ export function formatTime(t: string) {
   return `${((h + 11) % 12) + 1}:${String(m).padStart(2, "0")} ${suffix}`;
 }
 
+/** Package price plus extra charges (e.g. transportation) */
+export const totalOf = (b: Booking) => b.price + (b.extras ?? []).reduce((s, e) => s + e.amount, 0);
 export const paidOf = (b: Booking) => b.payments.reduce((s, p) => s + p.amount, 0);
-export const balanceOf = (b: Booking) => (b.status === "cancelled" ? 0 : Math.max(0, b.price - paidOf(b)));
+export const balanceOf = (b: Booking) => (b.status === "cancelled" ? 0 : Math.max(0, totalOf(b) - paidOf(b)));
 
 export function timeAgo(iso: string, now: number) {
   const s = Math.max(0, Math.round((now - new Date(iso).getTime()) / 1000));
