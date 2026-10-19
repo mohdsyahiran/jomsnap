@@ -162,7 +162,7 @@ export function Dashboard({ user }: { user: string }) {
 
       <footer className="w-full bg-surface-container-low py-6 md:py-10 mt-8">
         <div className="max-w-[1440px] mx-auto px-4 md:px-8 flex flex-col md:flex-row items-center justify-between gap-3 text-label-md text-on-surface-variant">
-          <span>JomSnap (TR0336905-T) · © {new Date().getFullYear()}. Admin console.</span>
+          <span>JomSnap (KT0620473-X) · © {new Date().getFullYear()}. Admin console.</span>
           <span className="flex items-center gap-1.5">
             <span className="w-2 h-2 rounded-full bg-tertiary-fixed-dim" />
             Neon database

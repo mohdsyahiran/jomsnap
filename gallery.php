@@ -96,7 +96,7 @@ if (isset($_GET['delete']) && isset($_GET['photo'])) {
                 <div class="footer-logo">
                     <img src="logo.png" alt="JomSnap logo" class="logo-image">
                 </div>
-                <p class="footer-copy">JomSnap (TR0336905-T) &nbsp;·&nbsp; &copy; 2026. All rights reserved.</p>
+                <p class="footer-copy">JomSnap (KT0620473-X) &nbsp;·&nbsp; &copy; 2026. All rights reserved.</p>
             </div>
         </div>
     </footer>

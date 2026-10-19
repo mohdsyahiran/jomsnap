@@ -16,7 +16,7 @@ export default function LoginPage() {
         <div className="rounded-2xl bg-surface-container-lowest shadow-sm border border-outline-variant/30 p-6">
           <LoginForm />
         </div>
-        <p className="mt-6 text-center text-label-md text-on-surface-variant">JomSnap (TR0336905-T) · Staff only</p>
+        <p className="mt-6 text-center text-label-md text-on-surface-variant">JomSnap (KT0620473-X) · Staff only</p>
       </div>
     </main>
   );
