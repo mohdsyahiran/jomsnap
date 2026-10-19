@@ -55,7 +55,7 @@ async function Invoice({ params }: { params: Promise<{ id: string }> }) {
   const label = "text-[11px] font-bold tracking-[0.18em] uppercase";
 
   return (
-    <div className={`${openSans.variable} min-h-screen bg-[#e9e6e3] print:bg-white`}>
+    <div className={`${openSans.variable} min-h-screen print:min-h-0 bg-[#e9e6e3] print:bg-white`}>
       <InvoiceToolbar
         invoiceNo={b.invoiceNo}
         client={b.client}
@@ -66,14 +66,16 @@ async function Invoice({ params }: { params: Promise<{ id: string }> }) {
         balance={money(balance)}
       />
 
+      {/* On screen a full A4 sheet; in print it sizes to its content, so browser margins
+          (Safari, Chrome "Default") can't push it onto a second page */}
       <article
-        className="invoice-sheet mx-auto my-6 print:my-0 bg-white text-[#3a3a3a] shadow-lg print:shadow-none w-[210mm] max-w-full min-h-[297mm] px-[17mm] py-[16mm] flex flex-col tracking-[0.06em] text-[13px] leading-[1.7]"
+        className="invoice-sheet mx-auto my-6 print:my-0 bg-white text-[#3a3a3a] shadow-lg print:shadow-none w-[210mm] max-w-full print:w-full min-h-[297mm] print:min-h-0 px-[17mm] py-[16mm] print:px-[12mm] print:py-[6mm] flex flex-col tracking-[0.06em] text-[13px] leading-[1.7] break-inside-avoid"
         style={{ fontFamily: "var(--font-invoice), sans-serif" }}
       >
         <h1 className="text-[46px] leading-none font-bold tracking-[0.18em]">INVOICE</h1>
-        <Image src="/logo-wide.png" alt="JomSnap" width={900} height={328} priority className="mt-9 w-[38mm] h-auto" />
+        <Image src="/logo-wide.png" alt="JomSnap" width={900} height={328} priority className="mt-9 print:mt-6 w-[38mm] h-auto" />
 
-        <section className="mt-8">
+        <section className="mt-8 print:mt-6">
           <p className={label}>{BUSINESS.name}</p>
           <p>{BUSINESS.regNo}</p>
           <p>
@@ -83,7 +85,7 @@ async function Invoice({ params }: { params: Promise<{ id: string }> }) {
           <p>{BUSINESS.email}</p>
         </section>
 
-        <section className="mt-16 flex justify-between gap-6">
+        <section className="mt-16 print:mt-8 flex justify-between gap-6">
           <div>
             <p className={label}>Bill to:</p>
             <p>{b.client}</p>
@@ -99,7 +101,7 @@ async function Invoice({ params }: { params: Promise<{ id: string }> }) {
           </dl>
         </section>
 
-        <table className="mt-16 w-full border-collapse">
+        <table className="mt-16 print:mt-8 w-full border-collapse">
           <thead>
             <tr className="border-b border-[#3a3a3a]">
               <th className={`${label} text-left font-bold pb-3 pl-3`}>Description</th>
@@ -143,7 +145,7 @@ async function Invoice({ params }: { params: Promise<{ id: string }> }) {
           )}
         </div>
 
-        <div className="mt-auto pt-16 flex items-end justify-between gap-6">
+        <div className="mt-auto pt-16 print:pt-9 flex items-end justify-between gap-6">
           <div className="space-y-6">
             <section>
               <p className={label}>Event details</p>
