@@ -1,12 +1,16 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useEffect, useState } from "react";
 import { login, type LoginState } from "../../actions";
 import { Icon, inputClass } from "@/components/ui";
 
 export function LoginForm() {
   const [state, action, pending] = useActionState<LoginState, FormData>(login, {});
   const [show, setShow] = useState(false);
+  // A full page load (not a client-side navigation) so no page cached for another account is reused
+  useEffect(() => {
+    if (state.ok) window.location.replace("/admin");
+  }, [state.ok]);
 
   return (
     <form action={action} className="flex flex-col gap-4">
@@ -38,11 +42,11 @@ export function LoginForm() {
 
       <button
         type="submit"
-        disabled={pending}
+        disabled={pending || state.ok}
         className="mt-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-primary hover:bg-primary-container text-on-primary text-body-md font-semibold disabled:opacity-60"
       >
-        <Icon name={pending ? "progress_activity" : "login"} className={`text-lg ${pending ? "animate-spin" : ""}`} />
-        {pending ? "Signing in…" : "Sign in"}
+        <Icon name={pending || state.ok ? "progress_activity" : "login"} className={`text-lg ${pending || state.ok ? "animate-spin" : ""}`} />
+        {pending || state.ok ? "Signing in…" : "Sign in"}
       </button>
     </form>
   );

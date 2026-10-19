@@ -1,8 +1,8 @@
 // Pure state transitions, shared by the browser and the server actions that persist to Neon
-import { PACKAGES, SUPPLIES_PER_EVENT } from "./constants";
+import { PACKAGES, SUPPLIES_PER_EVENT, TEAMS } from "./constants";
 import { formatRM, toISODate, uid } from "./format";
-import { DEFAULT_STOCK } from "./seed";
-import type { AdminData, AuditEntry, Booking, GuestbookStatus, Payment, StockItem, Transaction } from "./types";
+import { DEFAULT_STOCK, stockId } from "./seed";
+import type { AdminData, AuditEntry, Booking, GuestbookStatus, Payment, PrepItem, StockItem, Team, Transaction, Unavailability } from "./types";
 
 export type Action =
   | { type: "load"; data: AdminData }
@@ -20,20 +20,30 @@ export type Action =
   | { type: "addTxn"; txn: Omit<Transaction, "id" | "createdAt" | "by"> }
   | { type: "deleteTxn"; id: string }
   | { type: "setGuestbook"; id: string; status: GuestbookStatus; cost?: number }
-  | { type: "issueInvoice"; id: string; invoiceNo: string };
+  | { type: "issueInvoice"; id: string; invoiceNo: string }
+  | { type: "addUnavailable"; entry: Pick<Unavailability, "team" | "from" | "to" | "note"> }
+  | { type: "deleteUnavailable"; id: string }
+  | { type: "setPrep"; id: string; item: PrepItem; done: boolean };
 
 /** Who made the change; set on the server from the signed-in session */
 export type Stamped = Action & { by?: string };
 
 let currentBy: string | undefined;
 
-function log(data: AdminData, kind: AuditEntry["kind"], message: string): AuditEntry[] {
-  return [{ id: uid(), at: new Date().toISOString(), kind, message, by: currentBy }, ...data.audit].slice(0, 200);
+function log(data: AdminData, kind: AuditEntry["kind"], message: string, team?: Team): AuditEntry[] {
+  return [{ id: uid(), at: new Date().toISOString(), kind, message, by: currentBy, team }, ...data.audit].slice(0, 200);
 }
+
+/** "DNP 4x6 Media Roll" for HQ as before, "DNP 4x6 Media Roll (Utara)" for other teams */
+const itemName = (s: StockItem) => (s.team === "HQ" ? s.name : `${s.name} (${s.team})`);
+
+const dayRange = (u: Pick<Unavailability, "from" | "to">) => (u.from === u.to ? u.from : `${u.from} to ${u.to}`);
 
 /** Apply (sign = -1) or return (sign = +1) the consumables a booking uses. */
 function moveSupplies(data: AdminData, b: Booking, sign: 1 | -1) {
-  return data.stock.map((s) => (SUPPLIES_PER_EVENT[s.id] ? { ...s, qty: Math.max(0, s.qty + sign * SUPPLIES_PER_EVENT[s.id]) } : s));
+  const team = b.team ?? "HQ";
+  const per = new Map(Object.entries(SUPPLIES_PER_EVENT).map(([base, n]) => [stockId(team, base), n]));
+  return data.stock.map((s) => (per.has(s.id) ? { ...s, qty: Math.max(0, s.qty + sign * per.get(s.id)!) } : s));
 }
 
 export function reducer(data: AdminData, action: Stamped): AdminData {
@@ -137,7 +147,7 @@ export function reducer(data: AdminData, action: Stamped): AdminData {
               date: toISODate(new Date()),
               category: "supplies",
               method: "transfer",
-              note: `Restock ${s.name} +${action.delta}`,
+              note: `Restock ${itemName(s)} +${action.delta}`,
               by: action.by,
               createdAt: new Date().toISOString(),
             },
@@ -151,8 +161,9 @@ export function reducer(data: AdminData, action: Stamped): AdminData {
           data,
           "stock",
           s.kind === "available"
-            ? `${s.name} → ${action.delta > 0 ? "available" : "not available"}`
-            : `${s.name} ${action.delta > 0 ? "+" : ""}${action.delta}${action.cost ? ` · cost ${formatRM(action.cost)}` : ""}`,
+            ? `${itemName(s)} → ${action.delta > 0 ? "available" : "not available"}`
+            : `${itemName(s)} ${action.delta > 0 ? "+" : ""}${action.delta}${action.cost ? ` · cost ${formatRM(action.cost)}` : ""}`,
+          s.team,
         ),
       };
     }
@@ -197,7 +208,7 @@ export function reducer(data: AdminData, action: Stamped): AdminData {
         ...data,
         bookings: data.bookings.map((x) => (x.id === b.id ? { ...x, guestbook } : x)),
         transactions: [...data.transactions, ...expense],
-        audit: log(data, "stock", `Guestbook #${b.code} ${b.client} → ${action.status}${action.cost ? ` · ${formatRM(action.cost)}` : ""}`),
+        audit: log(data, "stock", `Guestbook #${b.code} ${b.client} → ${action.status}${action.cost ? ` · ${formatRM(action.cost)}` : ""}`, b.team),
       };
     }
 
@@ -210,6 +221,44 @@ export function reducer(data: AdminData, action: Stamped): AdminData {
         ...data,
         bookings: data.bookings.map((x) => (x.id === b.id ? { ...x, invoiceNo: no, invoiceDate: x.invoiceDate ?? toISODate(new Date()) } : x)),
         audit: log(data, "booking", `Invoice ${no} for #${b.code} ${b.client}`),
+      };
+    }
+
+    case "setPrep": {
+      const b = data.bookings.find((x) => x.id === action.id);
+      if (!b) return data;
+      const label = { guestbook: "guestbook printed", design: "photostrip design finalized", backdrop: "backdrop ready" }[action.item];
+      const audit = log(data, "booking", `#${b.code} ${b.client}: ${label}${action.done ? "" : " (undone)"}`, b.team);
+      if (action.item === "guestbook") {
+        // "Printed" is the guestbook's received state; undoing goes back to ordered (or not ordered)
+        if (!b.guestbook || (b.guestbook.status === "received") === action.done) return data;
+        const today = toISODate(new Date());
+        const guestbook = action.done
+          ? { status: "received" as const, orderedAt: b.guestbook.orderedAt ?? today, receivedAt: today }
+          : { status: b.guestbook.orderedAt ? ("ordered" as const) : ("pending" as const), orderedAt: b.guestbook.orderedAt };
+        return { ...data, bookings: data.bookings.map((x) => (x.id === b.id ? { ...x, guestbook } : x)), audit };
+      }
+      if (!!b.prep?.[action.item] === action.done) return data;
+      const prep = { ...b.prep, [action.item]: action.done ? toISODate(new Date()) : undefined };
+      return { ...data, bookings: data.bookings.map((x) => (x.id === b.id ? { ...x, prep } : x)), audit };
+    }
+
+    case "addUnavailable": {
+      const entry: Unavailability = { ...action.entry, id: uid(), by: action.by, createdAt: new Date().toISOString() };
+      return {
+        ...data,
+        unavailability: [...data.unavailability, entry],
+        audit: log(data, "schedule", `${entry.team} unavailable ${dayRange(entry)}${entry.note ? ` · ${entry.note}` : ""}`, entry.team),
+      };
+    }
+
+    case "deleteUnavailable": {
+      const u = data.unavailability.find((x) => x.id === action.id);
+      if (!u) return data;
+      return {
+        ...data,
+        unavailability: data.unavailability.filter((x) => x.id !== u.id),
+        audit: log(data, "schedule", `${u.team} available again ${dayRange(u)}`, u.team),
       };
     }
 
@@ -239,15 +288,25 @@ type LegacyStock = Partial<StockItem> & { id: string; qty: number };
  * - money ledger added (transactions)
  * - stock reduced to media rolls + props; ribbon/guestbook stock dropped
  * - guestbooks tracked per booking (Standard/Premium include one)
+ * - stock kept per team (old items become HQ's); team unavailability added
  */
 export function normalize(d: AdminData): AdminData {
   const old = (d.stock ?? []) as LegacyStock[];
-  const stock = DEFAULT_STOCK.map((def) => {
-    const prev = old.find((s) => s.id === def.id);
-    return { ...def, ...(prev?.kind ? prev : {}), qty: clampQty(def, prev?.qty ?? def.qty) };
-  });
+  const stock = TEAMS.flatMap((team) =>
+    DEFAULT_STOCK.map((base) => {
+      const def: StockItem = { ...base, id: stockId(team, base.id), team };
+      const prev = old.find((s) => s.id === def.id);
+      return { ...def, ...(prev?.kind ? prev : {}), team, qty: clampQty(def, prev?.qty ?? def.qty) };
+    }),
+  );
   const bookings = d.bookings.map((b) =>
     b.guestbook !== undefined ? b : { ...b, guestbook: PACKAGES[b.packageId]?.guestbook ? { status: "pending" as const } : null },
   );
-  return { ...d, stock, bookings, transactions: Array.isArray(d.transactions) ? d.transactions : [] };
+  return {
+    ...d,
+    stock,
+    bookings,
+    transactions: Array.isArray(d.transactions) ? d.transactions : [],
+    unavailability: Array.isArray(d.unavailability) ? d.unavailability : [],
+  };
 }

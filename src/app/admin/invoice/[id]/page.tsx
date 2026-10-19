@@ -41,7 +41,10 @@ export default function InvoicePage(props: PageProps<"/admin/invoice/[id]">) {
 
 async function Invoice({ params }: { params: Promise<{ id: string }> }) {
   await connection();
-  if (!verifyToken((await cookies()).get(SESSION_COOKIE)?.value)) redirect("/admin/login");
+  const session = verifyToken((await cookies()).get(SESSION_COOKIE)?.value);
+  if (!session) redirect("/admin/login");
+  // Invoices show prices and payments, which team logins don't get
+  if (session.team) redirect("/admin");
   const { id } = await params;
   const { data } = await loadSnapshot();
   const b = data.bookings.find((x) => x.id === id);

@@ -24,6 +24,9 @@ export const STATUS_STYLE: Record<BookingStatus, { label: string; className: str
 // Consumables used per event when "Record supplies used" is pressed
 export const SUPPLIES_PER_EVENT: Record<string, number> = { "media-4x6": 1 };
 
+/** Event prep reminders start this many days before the event */
+export const REMINDER_DAYS = 7;
+
 /** Guestbooks must be ordered this many days before the event */
 export const GUESTBOOK_LEAD_DAYS = 7;
 /** Start warning this many days before the order-by date */

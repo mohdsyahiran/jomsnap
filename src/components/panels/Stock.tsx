@@ -9,7 +9,7 @@ import type { Booking, StockItem } from "@/lib/types";
 import { Button, Card, Empty, Field, Icon, inputClass, Modal, PanelHeader, Pill } from "../ui";
 
 export function Stock() {
-  const { data, dispatch } = useStore();
+  const { data, dispatch, team } = useStore();
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
     const t = setInterval(() => setNow(Date.now()), 30_000);
@@ -17,7 +17,10 @@ export function Stock() {
   }, []);
 
   const today = toISODate(new Date());
-  const alerts = stockAlerts(data, today);
+  const alerts = stockAlerts(data, today, team);
+  // Admin manages HQ stock as before and can look at other teams' stock; a team login has only its own
+  const mine = data.stock.filter((s) => s.team === (team ?? "HQ"));
+  const others = team ? [] : data.stock.filter((s) => s.team !== "HQ");
   const [restockOpen, setRestockOpen] = useState(false);
   const [ordering, setOrdering] = useState<Booking | null>(null);
 
@@ -26,8 +29,12 @@ export function Stock() {
       <PanelHeader
         icon="inventory_2"
         iconClass="bg-error-container text-on-error-container"
-        title="Stock & Guestbooks"
-        subtitle={`Media rolls: keep at least ${data.stock.find((x) => x.id === "media-4x6")?.min ?? 2}. Guestbooks are ordered per booking, ${GUESTBOOK_LEAD_DAYS} days before the event.`}
+        title={team ? `Team ${team} stock & guestbooks` : "Stock & Guestbooks"}
+        subtitle={
+          team
+            ? `Keep at least ${mine.find((x) => x.kind === "count")?.min ?? 2} media rolls. Guestbooks for your events are ordered ${GUESTBOOK_LEAD_DAYS} days before each one.`
+            : `Media rolls: keep at least ${data.stock.find((x) => x.id === "media-4x6")?.min ?? 2}. Guestbooks are ordered per booking, ${GUESTBOOK_LEAD_DAYS} days before the event.`
+        }
       >
         <Button variant="primary" icon="add_box" onClick={() => setRestockOpen(true)}>
           Restock rolls
@@ -51,7 +58,7 @@ export function Stock() {
       )}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-        {data.stock.map((s) =>
+        {mine.map((s) =>
           s.kind === "available" ? (
             <AvailableCard key={s.id} s={s} onSet={(available) => dispatch({ type: "adjustStock", id: s.id, delta: available ? 1 : -1 })} />
           ) : (
@@ -62,12 +69,27 @@ export function Stock() {
 
       <GuestbookOrders today={today} onOrder={setOrdering} />
 
+      {others.length > 0 && (
+        <section className="space-y-3">
+          <div className="flex flex-wrap items-baseline justify-between gap-2">
+            <h3 className="text-headline-sm font-bold text-primary flex items-center gap-2">
+              <Icon name="groups" className="text-secondary" />
+              Other teams&apos; stock
+            </h3>
+            <span className="text-label-md text-on-surface-variant">Updated by each team from their own login</span>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+            {others.map((s) => (s.kind === "available" ? <AvailableCard key={s.id} s={s} /> : <CountCard key={s.id} s={s} />))}
+          </div>
+        </section>
+      )}
+
       <Modal open={!!ordering} onClose={() => setOrdering(null)} title="Guestbook ordered">
         {ordering && <OrderForm booking={ordering} onDone={() => setOrdering(null)} />}
       </Modal>
 
       <Modal open={restockOpen} onClose={() => setRestockOpen(false)} title="Restock">
-        {restockOpen && <RestockForm stock={data.stock} onDone={() => setRestockOpen(false)} />}
+        {restockOpen && <RestockForm stock={mine} onDone={() => setRestockOpen(false)} />}
       </Modal>
 
       <Card className="p-4 sm:p-6">
@@ -84,7 +106,7 @@ export function Stock() {
                 <span className="flex items-center gap-2 min-w-0">
                   <span
                     className={`w-2 h-2 rounded-full shrink-0 ${
-                      { booking: "bg-primary", payment: "bg-tertiary", money: "bg-tertiary", stock: "bg-secondary", system: "bg-outline" }[a.kind]
+                      { booking: "bg-primary", payment: "bg-tertiary", money: "bg-tertiary", stock: "bg-secondary", schedule: "bg-error", system: "bg-outline" }[a.kind]
                     }`}
                   />
                   <span className="truncate">{a.message}</span>
@@ -102,14 +124,18 @@ export function Stock() {
   );
 }
 
-function CountCard({ s, onDelta }: { s: StockItem; onDelta: (d: number) => void }) {
+/** Without onDelta the card is view-only (another team's stock) */
+function CountCard({ s, onDelta }: { s: StockItem; onDelta?: (d: number) => void }) {
   const low = isLow(s);
   const empty = s.qty === 0;
   return (
     <Card className="p-5 flex flex-col justify-between">
       <div>
         <div className="flex items-center justify-between gap-2 mb-1">
-          <span className="text-label-md font-semibold text-primary">{s.name}</span>
+          <span className="text-label-md font-semibold text-primary">
+            {s.name}
+            {!onDelta && ` · ${s.team}`}
+          </span>
           {empty ? (
             <Pill className="bg-error-container text-on-error-container animate-pulse">Out of stock</Pill>
           ) : low ? (
@@ -125,48 +151,56 @@ function CountCard({ s, onDelta }: { s: StockItem; onDelta: (d: number) => void 
       </div>
       <div className="flex items-center justify-between mt-4">
         <span className="text-label-sm text-outline">{low ? `Buy ${s.min - s.qty} more to be OK` : "Enough for now"}</span>
-        <div className="flex gap-1.5">
-          <Button className="w-9 h-9 px-0" onClick={() => onDelta(-1)} disabled={s.qty === 0} aria-label={`Use one ${s.name}`}>
-            <Icon name="remove" />
-          </Button>
-          <Button className="w-9 h-9 px-0" onClick={() => onDelta(1)} aria-label={`Add one ${s.name}`}>
-            <Icon name="add" />
-          </Button>
-        </div>
+        {onDelta && (
+          <div className="flex gap-1.5">
+            <Button className="w-9 h-9 px-0" onClick={() => onDelta(-1)} disabled={s.qty === 0} aria-label={`Use one ${s.name}`}>
+              <Icon name="remove" />
+            </Button>
+            <Button className="w-9 h-9 px-0" onClick={() => onDelta(1)} aria-label={`Add one ${s.name}`}>
+              <Icon name="add" />
+            </Button>
+          </div>
+        )}
       </div>
     </Card>
   );
 }
 
-function AvailableCard({ s, onSet }: { s: StockItem; onSet: (available: boolean) => void }) {
+/** Without onSet the card is view-only (another team's stock) */
+function AvailableCard({ s, onSet }: { s: StockItem; onSet?: (available: boolean) => void }) {
   const available = s.qty > 0;
   return (
     <Card className="p-5 flex flex-col justify-between">
       <div>
         <div className="flex items-center justify-between gap-2 mb-1">
-          <span className="text-label-md font-semibold text-primary">{s.name}</span>
+          <span className="text-label-md font-semibold text-primary">
+            {s.name}
+            {!onSet && ` · ${s.team}`}
+          </span>
           <Pill className={available ? "bg-tertiary-fixed text-on-tertiary-fixed" : "bg-error-container text-on-error-container"}>{available ? "OK" : "Missing"}</Pill>
         </div>
         <div className={`text-headline-xl font-bold ${available ? "text-primary" : "text-error"}`}>{available ? "Available" : "Not available"}</div>
         <p className="text-body-sm text-on-surface-variant">Do we have the props ready for events?</p>
       </div>
-      <div className="mt-4 grid grid-cols-2 gap-1 p-1 bg-surface-container-high rounded-lg" role="radiogroup" aria-label={`${s.name} availability`}>
-        {[true, false].map((v) => (
-          <button
-            key={String(v)}
-            type="button"
-            role="radio"
-            aria-checked={available === v}
-            onClick={() => available !== v && onSet(v)}
-            className={`flex items-center justify-center gap-1.5 py-2 rounded-lg text-label-md font-semibold ${
-              available === v ? (v ? "bg-tertiary-fixed text-on-tertiary-fixed shadow-sm" : "bg-error-container text-on-error-container shadow-sm") : "text-on-surface-variant"
-            }`}
-          >
-            <Icon name={v ? "check_circle" : "cancel"} className="text-base" />
-            {v ? "Available" : "Not available"}
-          </button>
-        ))}
-      </div>
+      {onSet && (
+        <div className="mt-4 grid grid-cols-2 gap-1 p-1 bg-surface-container-high rounded-lg" role="radiogroup" aria-label={`${s.name} availability`}>
+          {[true, false].map((v) => (
+            <button
+              key={String(v)}
+              type="button"
+              role="radio"
+              aria-checked={available === v}
+              onClick={() => available !== v && onSet(v)}
+              className={`flex items-center justify-center gap-1.5 py-2 rounded-lg text-label-md font-semibold ${
+                available === v ? (v ? "bg-tertiary-fixed text-on-tertiary-fixed shadow-sm" : "bg-error-container text-on-error-container shadow-sm") : "text-on-surface-variant"
+              }`}
+            >
+              <Icon name={v ? "check_circle" : "cancel"} className="text-base" />
+              {v ? "Available" : "Not available"}
+            </button>
+          ))}
+        </div>
+      )}
     </Card>
   );
 }
@@ -253,7 +287,7 @@ function GuestbookOrders({ today, onOrder }: { today: string; onOrder: (b: Booki
 }
 
 function OrderForm({ booking, onDone }: { booking: Booking; onDone: () => void }) {
-  const { dispatch } = useStore();
+  const { dispatch, team } = useStore();
   const [cost, setCost] = useState<number | "">("");
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -263,7 +297,11 @@ function OrderForm({ booking, onDone }: { booking: Booking; onDone: () => void }
   return (
     <form onSubmit={submit} className="flex flex-col gap-3">
       <p className="text-body-sm text-on-surface-variant">
-        Guestbook for <strong className="text-on-surface">#{booking.code} {booking.client}</strong> on {formatDate(booking.date)}.
+        Guestbook for{" "}
+        <strong className="text-on-surface">
+          #{booking.code} {booking.client}
+        </strong>{" "}
+        on {formatDate(booking.date)}.
       </p>
       <Field label="Cost RM (optional)">
         <input
@@ -277,7 +315,9 @@ function OrderForm({ booking, onDone }: { booking: Booking; onDone: () => void }
           autoFocus
         />
       </Field>
-      <p className="text-label-md text-outline">With a cost, it&apos;s also recorded under Money In &amp; Out as a supplies expense.</p>
+      <p className="text-label-md text-outline">
+        {team ? "With a cost, admin sees it as a supplies expense." : <>With a cost, it&apos;s also recorded under Money In &amp; Out as a supplies expense.</>}
+      </p>
       <div className="flex justify-end gap-2 pt-1">
         <Button variant="ghost" onClick={onDone}>
           Cancel
@@ -291,7 +331,7 @@ function OrderForm({ booking, onDone }: { booking: Booking; onDone: () => void }
 }
 
 function RestockForm({ stock: all, onDone }: { stock: StockItem[]; onDone: () => void }) {
-  const { dispatch } = useStore();
+  const { dispatch, team } = useStore();
   const stock = all.filter((s) => s.kind === "count");
   const [id, setId] = useState(stock[0]?.id ?? "");
   const [qty, setQty] = useState(10);
@@ -330,7 +370,9 @@ function RestockForm({ stock: all, onDone }: { stock: StockItem[]; onDone: () =>
           onChange={(e) => setCost(e.target.value === "" ? "" : Number(e.target.value))}
         />
       </Field>
-      <p className="col-span-2 text-label-md text-outline">With a cost, this is also recorded under Money In &amp; Out as a supplies expense.</p>
+      <p className="col-span-2 text-label-md text-outline">
+        {team ? "With a cost, admin sees it as a supplies expense." : <>With a cost, this is also recorded under Money In &amp; Out as a supplies expense.</>}
+      </p>
       <div className="col-span-2 flex justify-end gap-2 pt-1">
         <Button variant="ghost" onClick={onDone}>
           Cancel

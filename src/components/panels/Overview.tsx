@@ -74,7 +74,7 @@ export function Overview({ onNewBooking, onGoto, onPay }: Props) {
           ) : (
             <p className="text-body-sm text-on-surface-variant mt-1">Media rolls OK, props ready, guestbooks on track</p>
           )}
-          <KpiFoot left={data.stock.map(stockLabel).join(" · ")} right="Open stock →" rightClass="text-secondary cursor-pointer" onRight={() => onGoto("stock")} />
+          <KpiFoot left={data.stock.filter((s) => s.team === "HQ").map(stockLabel).join(" · ")} right="Open stock →" rightClass="text-secondary cursor-pointer" onRight={() => onGoto("stock")} />
         </Kpi>
       </div>
 

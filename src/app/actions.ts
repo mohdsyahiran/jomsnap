@@ -1,10 +1,9 @@
 "use server";
 
 import { cookies } from "next/headers";
-import { redirect } from "next/navigation";
 import { checkCredentials, createToken, SESSION_COOKIE, SESSION_DAYS } from "@/lib/session";
 
-export type LoginState = { error?: string; username?: string };
+export type LoginState = { error?: string; username?: string; ok?: boolean };
 
 export async function login(_prev: LoginState, form: FormData): Promise<LoginState> {
   const username = String(form.get("username") ?? "");
@@ -24,10 +23,11 @@ export async function login(_prev: LoginState, form: FormData): Promise<LoginSta
     path: "/admin",
     maxAge: SESSION_DAYS * 86400,
   });
-  redirect("/admin");
+  // The form does a full page load to /admin, so nothing from a previous account stays in memory
+  return { ok: true };
 }
 
+/** Called by signOut() in the browser, which then does a full page load to the login page */
 export async function logout() {
   (await cookies()).delete({ name: SESSION_COOKIE, path: "/admin" });
-  redirect("/admin/login");
 }

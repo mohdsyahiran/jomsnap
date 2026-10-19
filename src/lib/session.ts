@@ -1,10 +1,14 @@
 import "server-only";
 import { createHmac, timingSafeEqual } from "node:crypto";
+import { TEAMS } from "./constants";
+import type { Team } from "./types";
 
 export const SESSION_COOKIE = "jomsnap_admin";
 export const SESSION_DAYS = 14;
 
-export type Session = { user: string; exp: number };
+type Token = { user: string; exp: number };
+/** `team` is set for team logins, who only see and change their own team's things; admins have none */
+export type Session = Token & { team?: Team };
 
 function secret() {
   const s = process.env.SESSION_SECRET;
@@ -23,7 +27,7 @@ function safeEqual(a: string, b: string) {
 
 /** Token format: base64url(JSON payload) + "." + HMAC-SHA256 signature */
 export function createToken(user: string) {
-  const payload = b64(JSON.stringify({ user, exp: Date.now() + SESSION_DAYS * 86400_000 } satisfies Session));
+  const payload = b64(JSON.stringify({ user, exp: Date.now() + SESSION_DAYS * 86400_000 } satisfies Token));
   return `${payload}.${sign(payload)}`;
 }
 
@@ -32,29 +36,42 @@ export function verifyToken(token: string | undefined): Session | null {
   const [payload, sig] = token.split(".");
   if (!payload || !sig || !safeEqual(sig, sign(payload))) return null;
   try {
-    const s = JSON.parse(Buffer.from(payload, "base64url").toString()) as Session;
+    const s = JSON.parse(Buffer.from(payload, "base64url").toString()) as Token;
     if (typeof s.user !== "string" || typeof s.exp !== "number" || s.exp < Date.now()) return null;
-    // A user removed from ADMIN_USERS loses access even with a valid cookie
-    if (!adminUsers().has(s.user)) return null;
-    return s;
+    // Looked up on every request: a user removed from the env loses access even with a valid cookie,
+    // and moving someone between admin and a team takes effect straight away
+    const account = accounts().get(s.user);
+    if (!account) return null;
+    return { user: s.user, exp: s.exp, team: account.team };
   } catch {
     return null;
   }
 }
 
-/** ADMIN_USERS="syahiran:password1,partner:password2" */
-function adminUsers() {
-  const map = new Map<string, string>();
+type Account = { password: string; team?: Team };
+
+/**
+ * ADMIN_USERS="syahiran:password1,partner:password2"
+ * TEAM_USERS="utara:Utara:password3"  (username:team:password)
+ * A name in both lists is an admin.
+ */
+function accounts() {
+  const map = new Map<string, Account>();
+  for (const entry of (process.env.TEAM_USERS ?? "").split(",")) {
+    const [user, team, ...rest] = entry.split(":");
+    const t = TEAMS.find((x) => x.toLowerCase() === team?.trim().toLowerCase());
+    if (user?.trim() && t && rest.length) map.set(user.trim().toLowerCase(), { password: rest.join(":"), team: t });
+  }
   for (const pair of (process.env.ADMIN_USERS ?? "").split(",")) {
     const i = pair.indexOf(":");
-    if (i > 0) map.set(pair.slice(0, i).trim().toLowerCase(), pair.slice(i + 1));
+    if (i > 0) map.set(pair.slice(0, i).trim().toLowerCase(), { password: pair.slice(i + 1) });
   }
   return map;
 }
 
 export function checkCredentials(username: string, password: string) {
   const user = username.trim().toLowerCase();
-  const expected = adminUsers().get(user);
+  const expected = accounts().get(user)?.password;
   // Compare against something even for unknown users so timing doesn't reveal valid usernames
   const ok = safeEqual(sign(`pw:${password}`), sign(`pw:${expected ?? "\u0000invalid"}`));
   return ok && expected !== undefined ? user : null;

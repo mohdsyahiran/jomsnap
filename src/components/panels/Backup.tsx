@@ -8,13 +8,14 @@ import { emptyData } from "@/lib/seed";
 import { isAdminData, normalize } from "@/lib/reducer";
 import { useStore } from "@/lib/store";
 import type { AdminData } from "@/lib/types";
-import { Button, Card, Icon, PanelHeader } from "../ui";
+import { Button, Card, Field, Icon, inputClass, Modal, PanelHeader } from "../ui";
 
 export function Backup() {
   const { data, dispatch } = useStore();
   const input = useRef<HTMLInputElement>(null);
   const [status, setStatus] = useState<{ ok: boolean; msg: string } | null>(null);
   const [dragging, setDragging] = useState(false);
+  const [clearing, setClearing] = useState(false);
   // Anything entered during the browser-only preview, offered for upload once
   const [local, setLocal] = useState<AdminData | null>(null);
   useEffect(() => {
@@ -125,17 +126,50 @@ export function Backup() {
           <Icon name="restart_alt" className="text-secondary" />
           Reset
         </h3>
-        <p className="text-body-sm text-on-surface-variant mb-4">Remove everything on this device and start fresh. Download a backup first if you might need it.</p>
+        <p className="text-body-sm text-on-surface-variant mb-4">Remove everything from the database and start fresh. Download a backup first if you might need it.</p>
         <div className="flex flex-wrap gap-2">
-          <Button
-            variant="danger"
-            icon="delete_sweep"
-            onClick={() => confirm("Delete ALL bookings, payments, money entries and stock counts from the database? Everyone will lose this data.") && dispatch({ type: "load", data: emptyData() })}
-          >
+          <Button variant="danger" icon="delete_sweep" onClick={() => setClearing(true)}>
             Clear all data
           </Button>
         </div>
       </Card>
+
+      <Modal open={clearing} onClose={() => setClearing(false)} title="Clear all data?">
+        {clearing && <ClearForm onDone={() => setClearing(false)} />}
+      </Modal>
     </div>
+  );
+}
+
+/** Clearing can't be undone, so the button only unlocks once "delete" is typed */
+function ClearForm({ onDone }: { onDone: () => void }) {
+  const { data, dispatch } = useStore();
+  const [typed, setTyped] = useState("");
+  const ok = typed.trim().toLowerCase() === "delete";
+
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!ok) return;
+    if (await dispatch({ type: "load", data: emptyData() })) onDone();
+  };
+
+  return (
+    <form onSubmit={submit} className="flex flex-col gap-3">
+      <p className="text-body-sm text-on-surface-variant">
+        This deletes <strong className="text-on-surface">all {data.bookings.length} bookings</strong>, their payments, {data.transactions.length} money entries, stock counts,
+        unavailable days and the activity log from the database, for everyone. It can&apos;t be undone.
+      </p>
+      <Field label='Type "delete" to confirm'>
+        <input className={inputClass} value={typed} onChange={(e) => setTyped(e.target.value)} placeholder="delete" autoComplete="off" autoFocus />
+      </Field>
+      <div className="flex justify-end gap-2 pt-1">
+        <Button variant="ghost" onClick={onDone}>
+          Cancel
+        </Button>
+        <Button variant="danger" type="submit" icon="delete_sweep" disabled={!ok}>
+          Clear all data
+        </Button>
+      </div>
+    </form>
   );
 }

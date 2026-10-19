@@ -48,7 +48,7 @@ export function BookingModal({ booking, open, onClose }: { booking: Booking | nu
 }
 
 function BookingForm({ booking, onDone }: { booking: Booking | null; onDone: () => void }) {
-  const { dispatch } = useStore();
+  const { data, dispatch } = useStore();
   const [f, setF] = useState(() => ({
     client: booking?.client ?? "",
     phone: booking?.phone ?? "",
@@ -70,6 +70,7 @@ function BookingForm({ booking, onDone }: { booking: Booking | null; onDone: () 
     guestbook: booking ? !!booking.guestbook : PACKAGES.standard.guestbook,
   }));
   const set = <K extends keyof typeof f>(k: K, v: (typeof f)[K]) => setF((p) => ({ ...p, [k]: v }));
+  const teamOff = data.unavailability.find((u) => u.team === f.team && u.from <= f.date && f.date <= u.to);
 
   const pickPackage = (id: PackageId) => {
     const p = PACKAGES[id];
@@ -137,6 +138,12 @@ function BookingForm({ booking, onDone }: { booking: Booking | null; onDone: () 
           ))}
         </select>
       </Field>
+      {teamOff && (
+        <p role="alert" className="col-span-2 -mt-1 flex items-start gap-1.5 text-label-md font-semibold text-error">
+          <Icon name="event_busy" className="text-base" />
+          Team {f.team} marked this date unavailable{teamOff.note ? `: ${teamOff.note}` : ""}.
+        </p>
+      )}
       <Field label="Status">
         <select required className={inputClass} value={f.status} onChange={(e) => set("status", e.target.value as BookingStatus)}>
           <option value="" disabled>

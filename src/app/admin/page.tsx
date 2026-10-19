@@ -4,6 +4,7 @@ import { connection } from "next/server";
 import { Suspense } from "react";
 import { Dashboard } from "@/components/Dashboard";
 import { loadSnapshot } from "@/lib/db";
+import { scopeSnapshot } from "@/lib/scope";
 import { SESSION_COOKIE, verifyToken } from "@/lib/session";
 import { StoreProvider } from "@/lib/store";
 
@@ -22,9 +23,9 @@ async function AuthedDashboard() {
   const session = verifyToken((await cookies()).get(SESSION_COOKIE)?.value);
   if (!session) redirect("/admin/login");
 
-  const initial = await loadSnapshot();
+  const initial = scopeSnapshot(await loadSnapshot(), session.team);
   return (
-    <StoreProvider user={session.user} initial={initial}>
+    <StoreProvider user={session.user} team={session.team} initial={initial}>
       <Dashboard user={session.user} />
     </StoreProvider>
   );

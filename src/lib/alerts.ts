@@ -1,6 +1,6 @@
 import { GUESTBOOK_LEAD_DAYS, GUESTBOOK_WARN_DAYS } from "./constants";
 import { formatDate, parseDate, toISODate } from "./format";
-import type { AdminData, Booking, StockItem } from "./types";
+import type { AdminData, Booking, StockItem, Team } from "./types";
 
 export const isLow = (s: StockItem) => s.qty < s.min;
 
@@ -48,8 +48,9 @@ export function guestbookTasks(data: AdminData, today: string): GuestbookTask[] 
 }
 
 /** Everything that needs attention, as short lines for the Overview card and badges. */
-export function stockAlerts(data: AdminData, today = toISODate(new Date())) {
-  const low = data.stock.filter(isLow);
+/** Admin (no `team`) gets HQ stock; a team login its own. Guestbooks cover whatever bookings the login can see. */
+export function stockAlerts(data: AdminData, today = toISODate(new Date()), team?: Team) {
+  const low = data.stock.filter((s) => s.team === (team ?? "HQ") && isLow(s));
   const guestbooks = guestbookTasks(data, today).filter((t) => t.urgency !== "ok");
   const lines = [
     ...low.map((s) => (s.kind === "available" ? `${s.name}: not available` : `${s.name}: ${s.qty} left (need ${s.min})`)),

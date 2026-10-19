@@ -43,6 +43,8 @@ export type Booking = {
   backdrop?: string;
   /** Link to the print/backdrop design (usually Canva) */
   designUrl?: string;
+  /** Event prep ticked off from Reminders: the date each item was done (the guestbook uses its own status) */
+  prep?: Partial<Record<"design" | "backdrop", string>>;
   /** Charges on top of the package, e.g. transportation */
   extras?: Extra[];
   /** Set the first time an invoice is issued, e.g. "JS-2026-001" */
@@ -53,6 +55,8 @@ export type Booking = {
 
 export type StockItem = {
   id: string;
+  /** Each team keeps its own stock */
+  team: Team;
   name: string;
   unit: string;
   /** "count": a number with a minimum; "available": we have it (qty 1) or not (qty 0) */
@@ -61,6 +65,9 @@ export type StockItem = {
   /** OK when qty >= min */
   min: number;
 };
+
+/** Things to get ready in the week before an event */
+export type PrepItem = "guestbook" | "design" | "backdrop";
 
 export type GuestbookStatus = "pending" | "ordered" | "received";
 
@@ -75,8 +82,21 @@ export type AuditEntry = {
   id: string;
   at: string; // ISO
   message: string;
-  kind: "booking" | "payment" | "stock" | "money" | "system";
+  kind: "booking" | "payment" | "stock" | "money" | "system" | "schedule";
   by?: string;
+  /** Set on entries a team should see in its own activity log */
+  team?: Team;
+};
+
+/** Days a team can't take events, e.g. leave or another commitment */
+export type Unavailability = {
+  id: string;
+  team: Team;
+  from: string; // YYYY-MM-DD
+  to: string; // YYYY-MM-DD, same as from for a single day
+  note?: string;
+  by?: string;
+  createdAt: string;
 };
 
 /** A manual money entry. Booking payments are money in too, but live on the booking. */
@@ -99,5 +119,6 @@ export type AdminData = {
   stock: StockItem[];
   audit: AuditEntry[];
   transactions: Transaction[];
+  unavailability: Unavailability[];
   nextCode: number;
 };
