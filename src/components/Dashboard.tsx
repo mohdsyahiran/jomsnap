@@ -60,8 +60,8 @@ export function Dashboard({ user }: { user: string }) {
   const pay = (id: string | null) => setPayModal({ open: true, id });
 
   const today = toISODate(new Date());
-  const upcomingCount = data.bookings.filter((b) => b.date >= today && (b.status === "confirmed" || b.status === "tentative")).length;
-  const owed = data.bookings.reduce((s, b) => s + (b.status === "tentative" ? 0 : balanceOf(b)), 0);
+  const upcomingCount = data.bookings.filter((b) => b.date >= today && b.status !== "completed" && b.status !== "cancelled").length;
+  const owed = data.bookings.reduce((s, b) => s + balanceOf(b), 0);
   const lowStock = stockAlerts(data).count > 0;
 
   const badge = (id: TabId, active: boolean) => {

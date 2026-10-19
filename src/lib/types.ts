@@ -1,4 +1,7 @@
-export type BookingStatus = "tentative" | "confirmed" | "completed" | "cancelled";
+/** "tentative" is no longer offered; it only remains on old bookings until someone picks a new status */
+export type BookingStatus = "confirmed" | "completed" | "cancelled" | "tentative";
+
+export type Team = "Utara" | "HQ";
 
 export type PackageId = "basic" | "standard" | "premium" | "custom";
 
@@ -34,6 +37,8 @@ export type Booking = {
   /** null when this booking has no guestbook (missing only in data saved before guestbooks were tracked) */
   guestbook?: GuestbookOrder | null;
   notes?: string;
+  /** Which crew handles the event; missing on bookings made before teams existed */
+  team?: Team;
   /** Backdrop colour/theme, e.g. "Floral white" */
   backdrop?: string;
   /** Link to the print/backdrop design (usually Canva) */

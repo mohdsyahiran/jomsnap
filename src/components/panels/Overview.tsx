@@ -18,13 +18,12 @@ export function Overview({ onNewBooking, onGoto, onPay }: Props) {
   const year = now.getFullYear();
   const active = data.bookings.filter((b) => b.status !== "cancelled");
   const thisYear = active.filter((b) => parseDate(b.date).getFullYear() === year);
-  const tentative = thisYear.filter((b) => b.status === "tentative");
-  const locked = thisYear.filter((b) => b.status !== "tentative");
+  const completed = thisYear.filter((b) => b.status === "completed");
   const sum = (xs: Booking[], f: (b: Booking) => number = totalOf) => xs.reduce((s, b) => s + f(b), 0);
 
-  const lockedValue = sum(locked);
-  const collected = sum(locked, paidOf);
-  const owing = active.filter((b) => b.status !== "tentative" && balanceOf(b) > 0).sort((a, b) => a.date.localeCompare(b.date));
+  const salesValue = sum(thisYear);
+  const collected = sum(thisYear, paidOf);
+  const owing = active.filter((b) => balanceOf(b) > 0).sort((a, b) => a.date.localeCompare(b.date));
   const alerts = stockAlerts(data);
 
   return (
@@ -40,17 +39,17 @@ export function Overview({ onNewBooking, onGoto, onPay }: Props) {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5">
         <Kpi label="Total sales volume" icon="payments" iconClass="bg-surface-container-high text-secondary">
-          <div className="text-headline-xl sm:text-display font-bold text-primary tabular-nums">{formatRM(sum(thisYear))}</div>
+          <div className="text-headline-xl sm:text-display font-bold text-primary tabular-nums">{formatRM(salesValue)}</div>
           <p className="text-body-sm text-on-surface-variant mt-1">Across {thisYear.length} bookings this year</p>
-          <KpiFoot left={`Includes tentative: ${formatRM(sum(tentative))}`} right={`${tentative.length} pending`} rightClass="text-secondary" />
+          <KpiFoot left={`Completed: ${formatRM(sum(completed))}`} right={`${completed.length} event${completed.length === 1 ? "" : "s"} done`} rightClass="text-secondary" />
         </Kpi>
-        <Kpi label="Confirmed & completed" icon="check_circle" iconClass="bg-tertiary-fixed text-tertiary">
-          <div className="text-headline-xl sm:text-display font-bold text-primary tabular-nums">{formatRM(lockedValue)}</div>
+        <Kpi label="Payments received" icon="check_circle" iconClass="bg-tertiary-fixed text-tertiary">
+          <div className="text-headline-xl sm:text-display font-bold text-primary tabular-nums">{formatRM(collected)}</div>
           <p className="text-body-sm text-on-surface-variant mt-1 flex items-center gap-1.5">
             <span className="w-2 h-2 rounded-full bg-primary" />
-            {locked.length} locked bookings
+            From this year&apos;s bookings
           </p>
-          <KpiFoot left="Collected" right={`${lockedValue ? Math.round((collected / lockedValue) * 100) : 0}% received`} />
+          <KpiFoot left="Of total sales" right={`${salesValue ? Math.round((collected / salesValue) * 100) : 0}% received`} />
         </Kpi>
         <Kpi label="Balances owed" icon="pending_actions" iconClass="bg-secondary-fixed text-secondary">
           <div className="text-headline-xl sm:text-display font-bold text-secondary tabular-nums">{formatRM(sum(owing, balanceOf))}</div>
@@ -123,9 +122,9 @@ function SalesChart({ bookings, now }: { bookings: Booking[]; now: Date }) {
       const d = parseDate(b.date);
       return d.getFullYear() === m.getFullYear() && d.getMonth() === m.getMonth();
     });
-    const locked = inMonth.filter((b) => b.status !== "tentative").reduce((s, b) => s + totalOf(b), 0);
-    const tentative = inMonth.filter((b) => b.status === "tentative").reduce((s, b) => s + totalOf(b), 0);
-    return { m, locked, tentative, total: locked + tentative, count: inMonth.length };
+    const done = inMonth.filter((b) => b.status === "completed").reduce((s, b) => s + totalOf(b), 0);
+    const upcoming = inMonth.filter((b) => b.status !== "completed").reduce((s, b) => s + totalOf(b), 0);
+    return { m, done, upcoming, total: done + upcoming, count: inMonth.length };
   });
   const max = Math.max(1, ...series.map((s) => s.total));
   const peak = series.reduce((a, b) => (b.total > a.total ? b : a), series[0]);
@@ -139,16 +138,16 @@ function SalesChart({ bookings, now }: { bookings: Booking[]; now: Date }) {
             <Icon name="bar_chart" className="text-secondary" filled />
             Monthly Sales & Pipeline
           </h3>
-          <p className="text-body-sm text-on-surface-variant">Confirmed/completed bookings vs tentative holds, by event month.</p>
+          <p className="text-body-sm text-on-surface-variant">Completed events vs confirmed events still to come, by event month.</p>
         </div>
         <div className="flex items-center gap-4 text-label-md">
           <span className="flex items-center gap-1.5">
             <span className="w-3 h-3 rounded-sm bg-primary-container" />
-            Confirmed
+            Completed
           </span>
           <span className="flex items-center gap-1.5">
             <span className="w-3 h-3 rounded-sm bg-secondary-fixed" />
-            Tentative
+            Confirmed (upcoming)
           </span>
         </div>
       </div>
@@ -162,10 +161,10 @@ function SalesChart({ bookings, now }: { bookings: Booking[]; now: Date }) {
               <div
                 className={`w-full max-w-14 flex flex-col justify-end rounded-t-md overflow-hidden ${isPeak ? "ring-2 ring-secondary-container" : ""}`}
                 style={{ height: `${Math.max(2, (s.total / max) * 100)}%` }}
-                title={`${s.count} bookings · ${formatRM(s.locked)} confirmed · ${formatRM(s.tentative)} tentative`}
+                title={`${s.count} bookings · ${formatRM(s.done)} completed · ${formatRM(s.upcoming)} confirmed`}
               >
-                <div className="bg-secondary-fixed" style={{ flexGrow: s.tentative || 0.0001 }} />
-                <div className="bg-primary-container" style={{ flexGrow: s.locked || (s.total ? 0.0001 : 1) }} />
+                <div className="bg-secondary-fixed" style={{ flexGrow: s.upcoming || 0.0001 }} />
+                <div className="bg-primary-container" style={{ flexGrow: s.done || (s.total ? 0.0001 : 1) }} />
               </div>
               <span className={`text-label-md ${isPeak ? "text-secondary font-semibold" : "text-on-surface"}`}>
                 {s.m.toLocaleDateString("en-MY", { month: "short" })}
@@ -219,6 +218,7 @@ function NextEvent({ bookings, now, onPay, onGoto }: { bookings: Booking[]; now:
           <dl className="mt-4 space-y-2 text-body-sm">
             <Row icon="schedule" label={`${formatTime(next.startTime)} – ${formatTime(next.endTime)}`} />
             <Row icon="location_on" label={`${next.venue} · ${next.area}`} />
+            <Row icon="groups" label={next.team ? `Team ${next.team}` : "No team assigned yet"} className={next.team ? "" : "text-error"} />
             {next.backdrop && <Row icon="wallpaper" label={`Backdrop: ${next.backdrop}`} />}
             {safeUrl(next.designUrl) && (
               <div className="flex items-start gap-2">

@@ -2,6 +2,7 @@
 
 import { cookies } from "next/headers";
 import { loadSnapshot, saveSnapshot, type Snapshot } from "@/lib/db";
+import { STATUSES, TEAMS } from "@/lib/constants";
 import { safeUrl } from "@/lib/format";
 import { isAdminData, normalize, reducer, type Action } from "@/lib/reducer";
 import { SESSION_COOKIE, verifyToken } from "@/lib/session";
@@ -33,6 +34,8 @@ function validate(a: Action): string | null {
   if (!a || !ACTION_TYPES.has(a.type)) return "Unknown action";
   if (a.type === "load" && !isAdminData(a.data)) return "Not a JomSnap admin backup";
   if (a.type === "saveBooking" && (!a.booking?.client || !isMoney(a.booking.price) || typeof a.guestbookNeeded !== "boolean")) return "Invalid booking";
+  if (a.type === "saveBooking" && !(STATUSES as readonly string[]).includes(a.booking.status)) return "Choose a status: Confirmed, Completed or Cancelled";
+  if (a.type === "saveBooking" && !(TEAMS as readonly string[]).includes(a.booking.team ?? "")) return "Choose a team";
   if (a.type === "saveBooking" && a.booking.designUrl && !safeUrl(a.booking.designUrl)) return "Design link must start with https://";
   if (
     a.type === "saveBooking" &&

@@ -1,14 +1,37 @@
 "use client";
 
 import { useState } from "react";
-import { GUESTBOOK_LEAD_DAYS, PACKAGES } from "@/lib/constants";
+import { GUESTBOOK_LEAD_DAYS, PACKAGES, STATUS_STYLE, STATUSES, TEAMS } from "@/lib/constants";
 import { toISODate } from "@/lib/format";
 import { useStore } from "@/lib/store";
-import type { Booking, PackageId } from "@/lib/types";
+import type { Booking, BookingStatus, PackageId, Team } from "@/lib/types";
 import { Button, Field, Icon, inputClass, Modal } from "./ui";
 
 const EVENT_TYPES: Booking["eventType"][] = ["Wedding", "Engagement", "Corporate", "Birthday", "Other"];
 const AREAS: Booking["area"][] = ["Perak", "Kuala Lumpur", "Selangor", "Other"];
+
+// Description | amount | remove button: fixed columns so nothing overflows on phones
+const PRICE_ROW = "grid grid-cols-[minmax(0,1fr)_8rem_2.25rem] items-center gap-2";
+
+function MoneyInput({ value, onChange, label, required }: { value: number; onChange: (v: number) => void; label: string; required?: boolean }) {
+  return (
+    <span className="relative block">
+      <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-label-md text-outline">RM</span>
+      <input
+        type="number"
+        min={0}
+        step="0.01"
+        inputMode="decimal"
+        required={required}
+        aria-label={label}
+        className={`${inputClass} pl-10 text-right tabular-nums`}
+        value={value || ""}
+        placeholder="0"
+        onChange={(e) => onChange(Number(e.target.value))}
+      />
+    </span>
+  );
+}
 
 function addHours(time: string, hours: number) {
   const [h, m] = time.split(":").map(Number);
@@ -37,7 +60,9 @@ function BookingForm({ booking, onDone }: { booking: Booking | null; onDone: () 
     area: booking?.area ?? "Perak",
     packageId: booking?.packageId ?? ("standard" as PackageId),
     price: booking?.price ?? PACKAGES.standard.price,
-    status: booking?.status ?? "tentative",
+    // Old "tentative" bookings must get a real status; no default is picked for them
+    status: (booking?.status === "tentative" ? "" : (booking?.status ?? "confirmed")) as BookingStatus | "",
+    team: (booking?.team ?? "") as Team | "",
     notes: booking?.notes ?? "",
     backdrop: booking?.backdrop ?? "",
     extras: booking?.extras ?? [],
@@ -59,11 +84,12 @@ function BookingForm({ booking, onDone }: { booking: Booking | null; onDone: () 
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
-    const { guestbook, ...fields } = f;
+    const { guestbook, status, team, ...fields } = f;
+    if (!status || !team) return;
     dispatch({
       type: "saveBooking",
       guestbookNeeded: guestbook,
-      booking: { ...fields, id: booking?.id, client: f.client.trim(), venue: f.venue.trim(), price: Number(f.price) || 0, phone: f.phone.trim() || undefined, notes: f.notes.trim() || undefined, backdrop: fields.backdrop.trim() || undefined, designUrl: fields.designUrl.trim() || undefined, extras: fields.extras.filter((x) => x.label.trim() && x.amount > 0).map((x) => ({ label: x.label.trim(), amount: Number(x.amount) })) },
+      booking: { ...fields, status, team, id: booking?.id, client: f.client.trim(), venue: f.venue.trim(), price: Number(f.price) || 0, phone: f.phone.trim() || undefined, notes: f.notes.trim() || undefined, backdrop: fields.backdrop.trim() || undefined, designUrl: fields.designUrl.trim() || undefined, extras: fields.extras.filter((x) => x.label.trim() && x.amount > 0).map((x) => ({ label: x.label.trim(), amount: Number(x.amount) })) },
     });
     onDone();
   };
@@ -104,12 +130,26 @@ function BookingForm({ booking, onDone }: { booking: Booking | null; onDone: () 
           ))}
         </select>
       </Field>
+      <Field label="Team">
+        <select required className={inputClass} value={f.team} onChange={(e) => set("team", e.target.value as Team)}>
+          <option value="" disabled>
+            Choose team
+          </option>
+          {TEAMS.map((t) => (
+            <option key={t}>{t}</option>
+          ))}
+        </select>
+      </Field>
       <Field label="Status">
-        <select className={inputClass} value={f.status} onChange={(e) => set("status", e.target.value as Booking["status"])}>
-          <option value="tentative">Tentative</option>
-          <option value="confirmed">Confirmed</option>
-          <option value="completed">Completed</option>
-          <option value="cancelled">Cancelled</option>
+        <select required className={inputClass} value={f.status} onChange={(e) => set("status", e.target.value as BookingStatus)}>
+          <option value="" disabled>
+            Choose status
+          </option>
+          {STATUSES.map((st) => (
+            <option key={st} value={st}>
+              {STATUS_STYLE[st].label}
+            </option>
+          ))}
         </select>
       </Field>
       <Field label="Package">
@@ -121,19 +161,16 @@ function BookingForm({ booking, onDone }: { booking: Booking | null; onDone: () 
           ))}
         </select>
       </Field>
-      <Field label="Price (RM)">
-        <input required type="number" min={0} step="1" className={inputClass} value={f.price} onChange={(e) => set("price", Number(e.target.value))} />
-      </Field>
-      <div className="col-span-2 rounded-lg bg-surface-container-low p-3">
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-label-md font-semibold text-on-surface-variant">Extra charges</span>
-          <span className="text-label-md text-on-surface-variant">
-            Total <strong className="text-on-surface tabular-nums">RM {(Number(f.price) + f.extras.reduce((s, x) => s + (Number(x.amount) || 0), 0)).toLocaleString("en-MY")}</strong>
-          </span>
-        </div>
+      <fieldset className="col-span-2 rounded-xl border border-outline-variant/60 px-3 pb-3 pt-1 sm:px-4">
+        <legend className="px-1 text-label-md font-semibold text-on-surface-variant">Price</legend>
         <div className="space-y-2">
+          <div className={PRICE_ROW}>
+            <span className="text-body-sm text-on-surface truncate">{PACKAGES[f.packageId].label.split(" ·")[0]} package</span>
+            <MoneyInput required value={f.price} onChange={(v) => set("price", v)} label="Package price" />
+            <span />
+          </div>
           {f.extras.map((x, i) => (
-            <div key={i} className="flex gap-2">
+            <div key={i} className={PRICE_ROW}>
               <input
                 className={inputClass}
                 value={x.label}
@@ -141,39 +178,45 @@ function BookingForm({ booking, onDone }: { booking: Booking | null; onDone: () 
                 aria-label="Extra charge description"
                 onChange={(e) => set("extras", f.extras.map((y, j) => (j === i ? { ...y, label: e.target.value } : y)))}
               />
-              <input
-                type="number"
-                min={0}
-                step="0.01"
-                inputMode="decimal"
-                className={`${inputClass} w-32 shrink-0`}
-                value={x.amount || ""}
-                placeholder="RM"
-                aria-label="Extra charge amount"
-                onChange={(e) => set("extras", f.extras.map((y, j) => (j === i ? { ...y, amount: Number(e.target.value) } : y)))}
-              />
+              <MoneyInput value={x.amount} onChange={(v) => set("extras", f.extras.map((y, j) => (j === i ? { ...y, amount: v } : y)))} label="Extra charge amount" />
               <button
                 type="button"
                 aria-label="Remove extra charge"
-                className="w-10 shrink-0 rounded-lg text-outline hover:bg-error-container hover:text-on-error-container"
+                className="h-9 w-9 inline-flex items-center justify-center rounded-lg text-outline hover:bg-error-container hover:text-on-error-container"
                 onClick={() => set("extras", f.extras.filter((_, j) => j !== i))}
               >
-                <Icon name="close" className="text-base" />
+                <Icon name="delete" className="text-lg" />
               </button>
             </div>
           ))}
         </div>
-        <div className="flex flex-wrap gap-2 mt-2">
-          {!f.extras.some((x) => x.label === "Transportation") && (
-            <Button className="px-3 py-1.5" icon="local_shipping" onClick={() => set("extras", [...f.extras, { label: "Transportation", amount: 30 }])}>
+        <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1">
+          {!f.extras.some((x) => x.label.trim().toLowerCase() === "transportation") && (
+            <button
+              type="button"
+              className="inline-flex items-center gap-1 text-label-md font-semibold text-secondary hover:underline"
+              onClick={() => set("extras", [...f.extras, { label: "Transportation", amount: 30 }])}
+            >
+              <Icon name="add" className="text-base" />
               Transportation
-            </Button>
+            </button>
           )}
-          <Button className="px-3 py-1.5" icon="add" onClick={() => set("extras", [...f.extras, { label: "", amount: 0 }])}>
+          <button
+            type="button"
+            className="inline-flex items-center gap-1 text-label-md font-semibold text-secondary hover:underline"
+            onClick={() => set("extras", [...f.extras, { label: "", amount: 0 }])}
+          >
+            <Icon name="add" className="text-base" />
             Other charge
-          </Button>
+          </button>
         </div>
-      </div>
+        <div className="mt-3 pt-2 border-t border-outline-variant/50 flex items-center justify-between text-body-md">
+          <span className="font-semibold text-on-surface">Total</span>
+          <span className="font-bold tabular-nums text-primary">
+            RM {(Number(f.price) + f.extras.reduce((sum, x) => sum + (Number(x.amount) || 0), 0)).toLocaleString("en-MY", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+          </span>
+        </div>
+      </fieldset>
       <Field label="Backdrop">
         <input className={inputClass} value={f.backdrop} onChange={(e) => set("backdrop", e.target.value)} placeholder="e.g. Floral white" />
       </Field>

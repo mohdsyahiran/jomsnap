@@ -9,7 +9,7 @@ import type { Booking } from "@/lib/types";
 import { Button, Card, Empty, Icon, PanelHeader, Pill } from "../ui";
 
 const DOT: Record<Booking["status"], string> = {
-  tentative: "bg-secondary-container",
+  tentative: "bg-error",
   confirmed: "bg-tertiary",
   completed: "bg-outline",
   cancelled: "bg-error",
@@ -156,6 +156,7 @@ function EventRow({ b, onEdit, showDate }: { b: Booking; onEdit: (b: Booking) =>
         <p className="text-label-md text-on-surface-variant mt-0.5 truncate">
           {showDate && `${formatDate(b.date, { day: "numeric", month: "short" })} · `}
           {formatTime(b.startTime)} · {b.venue}
+          {b.team ? ` · ${b.team}` : " · No team"}
         </p>
       </button>
       <Button variant="soft" className="px-2.5 shrink-0" onClick={() => exportICS([b], `jomsnap-${b.code}.ics`)} title="Add to calendar">

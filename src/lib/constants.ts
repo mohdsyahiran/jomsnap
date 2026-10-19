@@ -1,4 +1,4 @@
-import type { BookingStatus, GuestbookStatus, PackageId } from "./types";
+import type { BookingStatus, GuestbookStatus, PackageId, Team } from "./types";
 
 // Mirrors the packages section on the public site (index.html)
 export const PACKAGES: Record<PackageId, { label: string; hours: number; price: number; guestbook: boolean }> = {
@@ -8,8 +8,13 @@ export const PACKAGES: Record<PackageId, { label: string; hours: number; price: 
   custom: { label: "Custom", hours: 0, price: 0, guestbook: false },
 };
 
+/** Statuses offered when saving a booking */
+export const STATUSES = ["confirmed", "completed", "cancelled"] as const satisfies readonly BookingStatus[];
+
+export const TEAMS = ["Utara", "HQ"] as const satisfies readonly Team[];
+
 export const STATUS_STYLE: Record<BookingStatus, { label: string; className: string }> = {
-  tentative: { label: "Tentative", className: "bg-secondary-fixed text-on-secondary-fixed" },
+  tentative: { label: "Needs status", className: "bg-error-container text-on-error-container" },
   confirmed: { label: "Confirmed", className: "bg-tertiary-fixed text-on-tertiary-fixed" },
   completed: { label: "Completed", className: "bg-surface-container-highest text-on-surface-variant" },
   cancelled: { label: "Cancelled", className: "bg-error-container text-on-error-container" },

@@ -95,7 +95,7 @@ export function reducer(data: AdminData, action: Stamped): AdminData {
       return {
         ...data,
         bookings: data.bookings.map((x) =>
-          x.id === b.id ? { ...x, payments: [...x.payments, payment], status: x.status === "tentative" ? "confirmed" : x.status } : x,
+          x.id === b.id ? { ...x, payments: [...x.payments, payment] } : x,
         ),
         audit: log(data, "payment", `Payment ${formatRM(payment.amount)} from ${b.client}`),
       };

@@ -1,35 +1,43 @@
 "use client";
 
 import { useState } from "react";
-import { GUESTBOOK_STYLE, PACKAGES, STATUS_STYLE } from "@/lib/constants";
+import { GUESTBOOK_STYLE, PACKAGES, STATUS_STYLE, TEAMS } from "@/lib/constants";
 import { balanceOf, formatRM, formatTime, parseDate, safeUrl, toISODate, totalOf, whatsappLink } from "@/lib/format";
 import { exportICS } from "@/lib/ics";
 import { canInvoice } from "@/lib/invoice";
 import { useStore } from "@/lib/store";
-import type { Booking, BookingStatus } from "@/lib/types";
+import type { Booking, BookingStatus, Team } from "@/lib/types";
 import { Button, Card, Empty, Icon, inputClass, PanelHeader, Pill } from "../ui";
 
 type Filter = "upcoming" | "all" | BookingStatus;
+type TeamFilter = "all" | "none" | Team;
 
 export function Bookings({ onNew, onEdit, onPay, onInvoice }: { onNew: () => void; onEdit: (b: Booking) => void; onPay: (id: string) => void; onInvoice: (b: Booking) => void }) {
   const { data, dispatch } = useStore();
-  const [filter, setFilter] = useState<Filter>("upcoming");
+  const [chosenFilter, setFilter] = useState<Filter>("upcoming");
   const [q, setQ] = useState("");
+  const [team, setTeam] = useState<TeamFilter>("all");
   const today = toISODate(new Date());
 
   const matches = (b: Booking, f: Filter) =>
     f === "all" ? true : f === "upcoming" ? b.date >= today && b.status !== "cancelled" && b.status !== "completed" : b.status === f;
   const count = (f: Filter) => data.bookings.filter((b) => matches(b, f)).length;
+  // The "Needs status" chip disappears once every old booking has a status; don't leave it selected
+  const filter: Filter = chosenFilter === "tentative" && !count("tentative") ? "upcoming" : chosenFilter;
 
   const needle = q.trim().toLowerCase();
+  const teamMatches = (b: Booking) => team === "all" || (team === "none" ? !b.team : b.team === team);
+  const noTeam = data.bookings.filter((b) => !b.team && b.status !== "cancelled").length;
   const rows = data.bookings
     .filter((b) => matches(b, filter))
+    .filter(teamMatches)
     .filter((b) => !needle || `${b.client} ${b.venue} ${b.code} ${b.phone ?? ""}`.toLowerCase().includes(needle))
     .sort((a, b) => (filter === "upcoming" ? a.date.localeCompare(b.date) : b.date.localeCompare(a.date)));
 
   const filters: [Filter, string][] = [
     ["upcoming", "Upcoming"],
-    ["tentative", "Tentative"],
+    // Old bookings from before "Tentative" was removed, until someone picks a status
+    ...(count("tentative") ? ([["tentative", "Needs status"]] as [Filter, string][]) : []),
     ["confirmed", "Confirmed"],
     ["completed", "Completed"],
     ["cancelled", "Cancelled"],
@@ -53,7 +61,7 @@ export function Bookings({ onNew, onEdit, onPay, onInvoice }: { onNew: () => voi
       </PanelHeader>
 
       <Card className="p-4 sm:p-6">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 mb-5">
+        <div className="flex flex-col lg:flex-row lg:flex-wrap lg:items-center justify-between gap-3 mb-5">
           <div className="flex items-center gap-1 p-1 bg-surface-container-high rounded-lg overflow-x-auto no-scrollbar">
             {filters.map(([f, label]) => (
               <button
@@ -65,6 +73,20 @@ export function Bookings({ onNew, onEdit, onPay, onInvoice }: { onNew: () => voi
                 }`}
               >
                 {label} ({count(f)})
+              </button>
+            ))}
+          </div>
+          <div className="flex items-center gap-1 p-1 bg-surface-container-high rounded-lg overflow-x-auto no-scrollbar" role="group" aria-label="Team">
+            {(["all", ...TEAMS, ...(noTeam ? (["none"] as const) : [])] as TeamFilter[]).map((t) => (
+              <button
+                key={t}
+                type="button"
+                onClick={() => setTeam(t)}
+                className={`px-3 py-1.5 rounded-lg text-label-md font-semibold whitespace-nowrap transition-all ${
+                  team === t ? "bg-surface-container-lowest text-primary shadow-sm" : "text-on-surface-variant hover:text-on-surface"
+                }`}
+              >
+                {t === "all" ? "All teams" : t === "none" ? `No team (${noTeam})` : t}
               </button>
             ))}
           </div>
@@ -94,6 +116,14 @@ export function Bookings({ onNew, onEdit, onPay, onInvoice }: { onNew: () => voi
                       <div className="flex flex-wrap items-center gap-2">
                         <span className="text-headline-sm font-bold text-primary">{b.client}</span>
                         <Pill className={STATUS_STYLE[b.status].className}>{STATUS_STYLE[b.status].label}</Pill>
+                        {b.team ? (
+                          <Pill className="bg-primary-container text-on-primary">
+                            <Icon name="groups" className="text-sm" />
+                            {b.team}
+                          </Pill>
+                        ) : (
+                          b.status !== "cancelled" && <Pill className="bg-error-container text-on-error-container">No team</Pill>
+                        )}
                         {b.guestbook && b.status !== "cancelled" && <Pill className={GUESTBOOK_STYLE[b.guestbook.status].className}>{GUESTBOOK_STYLE[b.guestbook.status].label}</Pill>}
                         <span className="text-label-md text-outline">#{b.code}</span>
                       </div>
@@ -103,7 +133,7 @@ export function Bookings({ onNew, onEdit, onPay, onInvoice }: { onNew: () => voi
                       <p className="text-label-md text-outline mt-0.5">
                         {b.eventType} · {PACKAGES[b.packageId].label} · {formatRM(totalOf(b))}
                         {b.extras?.length ? ` (incl. ${b.extras.map((e) => e.label).join(", ")})` : ""}
-                        {bal > 0 && b.status !== "tentative" && <span className="text-secondary font-semibold"> · balance {formatRM(bal)}</span>}
+                        {bal > 0 && <span className="text-secondary font-semibold"> · balance {formatRM(bal)}</span>}
                         {b.suppliesDeducted && <span className="text-tertiary"> · supplies recorded</span>}
                       </p>
                       {(b.backdrop || design) && (
@@ -126,9 +156,9 @@ export function Bookings({ onNew, onEdit, onPay, onInvoice }: { onNew: () => voi
                     </div>
                   </div>
                   <div className="flex flex-wrap items-center gap-1.5 xl:justify-end shrink-0">
-                    {b.status === "tentative" && (
-                      <Button icon="check" onClick={() => dispatch({ type: "setStatus", id: b.id, status: "confirmed" })}>
-                        Confirm
+                    {(b.status === "tentative" || !b.team) && (
+                      <Button icon="edit_note" className="bg-error-container text-on-error-container hover:bg-error-container" onClick={() => onEdit(b)}>
+                        {b.status === "tentative" && !b.team ? "Set status & team" : b.status === "tentative" ? "Set status" : "Set team"}
                       </Button>
                     )}
                     {b.status === "confirmed" && b.date <= today && (
@@ -141,7 +171,7 @@ export function Bookings({ onNew, onEdit, onPay, onInvoice }: { onNew: () => voi
                         Payment
                       </Button>
                     )}
-                    {!b.suppliesDeducted && b.status !== "cancelled" && b.status !== "tentative" && (
+                    {!b.suppliesDeducted && b.status !== "cancelled" && (
                       <IconBtn icon="inventory_2" label="Record supplies used" onClick={() => dispatch({ type: "recordSupplies", id: b.id })} />
                     )}
                     {canInvoice(b) && (
