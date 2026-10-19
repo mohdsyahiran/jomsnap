@@ -1,7 +1,7 @@
 /** "tentative" is no longer offered; it only remains on old bookings until someone picks a new status */
 export type BookingStatus = "confirmed" | "completed" | "cancelled" | "tentative";
 
-export type Team = "Utara" | "HQ";
+export type Team = "HQ" | "Utara";
 
 export type PackageId = "basic" | "standard" | "premium" | "custom";
 

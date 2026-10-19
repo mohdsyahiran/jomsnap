@@ -11,7 +11,8 @@ export const PACKAGES: Record<PackageId, { label: string; hours: number; price: 
 /** Statuses offered when saving a booking */
 export const STATUSES = ["confirmed", "completed", "cancelled"] as const satisfies readonly BookingStatus[];
 
-export const TEAMS = ["Utara", "HQ"] as const satisfies readonly Team[];
+// HQ is the primary team: listed first and picked by default
+export const TEAMS = ["HQ", "Utara"] as const satisfies readonly Team[];
 
 export const STATUS_STYLE: Record<BookingStatus, { label: string; className: string }> = {
   tentative: { label: "Needs status", className: "bg-error-container text-on-error-container" },

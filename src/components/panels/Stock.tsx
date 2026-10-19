@@ -27,7 +27,7 @@ export function Stock() {
         icon="inventory_2"
         iconClass="bg-error-container text-on-error-container"
         title="Stock & Guestbooks"
-        subtitle={`Media rolls: keep at least ${data.stock.find((x) => x.id === "media-4x6")?.min ?? 2}. Recording supplies for an event uses 1 roll. Guestbooks are ordered per booking, ${GUESTBOOK_LEAD_DAYS} days before the event.`}
+        subtitle={`Media rolls: keep at least ${data.stock.find((x) => x.id === "media-4x6")?.min ?? 2}. Guestbooks are ordered per booking, ${GUESTBOOK_LEAD_DAYS} days before the event.`}
       >
         <Button variant="primary" icon="add_box" onClick={() => setRestockOpen(true)}>
           Restock rolls

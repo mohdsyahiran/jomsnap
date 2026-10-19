@@ -12,7 +12,7 @@ import { Button, Card, Empty, Icon, inputClass, PanelHeader, Pill } from "../ui"
 type Filter = "upcoming" | "all" | BookingStatus;
 type TeamFilter = "all" | "none" | Team;
 
-export function Bookings({ onNew, onEdit, onPay, onInvoice }: { onNew: () => void; onEdit: (b: Booking) => void; onPay: (id: string) => void; onInvoice: (b: Booking) => void }) {
+export function Bookings({ onNew, onEdit, onSetup, onPay, onInvoice }: { onNew: () => void; onEdit: (b: Booking) => void; onSetup: (b: Booking) => void; onPay: (id: string) => void; onInvoice: (b: Booking) => void }) {
   const { data, dispatch } = useStore();
   const [chosenFilter, setFilter] = useState<Filter>("upcoming");
   const [q, setQ] = useState("");
@@ -157,7 +157,7 @@ export function Bookings({ onNew, onEdit, onPay, onInvoice }: { onNew: () => voi
                   </div>
                   <div className="flex flex-wrap items-center gap-1.5 xl:justify-end shrink-0">
                     {(b.status === "tentative" || !b.team) && (
-                      <Button icon="edit_note" className="bg-error-container text-on-error-container hover:bg-error-container" onClick={() => onEdit(b)}>
+                      <Button icon="edit_note" className="bg-error-container text-on-error-container hover:bg-error-container" onClick={() => onSetup(b)}>
                         {b.status === "tentative" && !b.team ? "Set status & team" : b.status === "tentative" ? "Set status" : "Set team"}
                       </Button>
                     )}
@@ -170,9 +170,6 @@ export function Bookings({ onNew, onEdit, onPay, onInvoice }: { onNew: () => voi
                       <Button icon="add_card" onClick={() => onPay(b.id)}>
                         Payment
                       </Button>
-                    )}
-                    {!b.suppliesDeducted && b.status !== "cancelled" && (
-                      <IconBtn icon="inventory_2" label="Record supplies used" onClick={() => dispatch({ type: "recordSupplies", id: b.id })} />
                     )}
                     {canInvoice(b) && (
                       <Button icon="receipt_long" onClick={() => onInvoice(b)}>

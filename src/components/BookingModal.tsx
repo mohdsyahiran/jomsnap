@@ -62,7 +62,7 @@ function BookingForm({ booking, onDone }: { booking: Booking | null; onDone: () 
     price: booking?.price ?? PACKAGES.standard.price,
     // Old "tentative" bookings must get a real status; no default is picked for them
     status: (booking?.status === "tentative" ? "" : (booking?.status ?? "confirmed")) as BookingStatus | "",
-    team: (booking?.team ?? "") as Team | "",
+    team: (booking?.team ?? TEAMS[0]) as Team,
     notes: booking?.notes ?? "",
     backdrop: booking?.backdrop ?? "",
     extras: booking?.extras ?? [],
@@ -132,9 +132,6 @@ function BookingForm({ booking, onDone }: { booking: Booking | null; onDone: () 
       </Field>
       <Field label="Team">
         <select required className={inputClass} value={f.team} onChange={(e) => set("team", e.target.value as Team)}>
-          <option value="" disabled>
-            Choose team
-          </option>
           {TEAMS.map((t) => (
             <option key={t}>{t}</option>
           ))}
@@ -247,6 +244,72 @@ function BookingForm({ booking, onDone }: { booking: Booking | null; onDone: () 
         </Button>
         <Button variant="primary" type="submit" icon="check">
           {booking ? "Save changes" : "Create booking"}
+        </Button>
+      </div>
+    </form>
+  );
+}
+
+/** Asks only for what an older booking is missing (team and/or status), leaving everything else as it is */
+export function SetupModal({ booking, onClose }: { booking: Booking | null; onClose: () => void }) {
+  const needsStatus = booking?.status === "tentative";
+  const needsTeam = !booking?.team;
+  const title = needsStatus && needsTeam ? "Set status & team" : needsStatus ? "Set status" : "Set team";
+  return (
+    <Modal open={!!booking} onClose={onClose} title={booking ? `${title} · #${booking.code}` : title}>
+      {booking && <SetupForm key={booking.id} booking={booking} needsStatus={needsStatus} needsTeam={needsTeam} onDone={onClose} />}
+    </Modal>
+  );
+}
+
+function SetupForm({ booking, needsStatus, needsTeam, onDone }: { booking: Booking; needsStatus: boolean; needsTeam: boolean; onDone: () => void }) {
+  const { dispatch } = useStore();
+  const [team, setTeam] = useState<Team>(booking.team ?? TEAMS[0]);
+  const [status, setStatus] = useState<BookingStatus | "">(needsStatus ? "" : booking.status);
+
+  const submit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!status) return;
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { code, createdAt, payments, suppliesDeducted, guestbook, invoiceNo, invoiceDate, ...fields } = booking;
+    dispatch({ type: "saveBooking", guestbookNeeded: !!guestbook, booking: { ...fields, team, status } });
+    onDone();
+  };
+
+  return (
+    <form onSubmit={submit} className="grid gap-3">
+      <p className="text-body-sm text-on-surface-variant">
+        {booking.client} · {booking.date} · {booking.venue}
+      </p>
+      {needsTeam && (
+        <Field label="Team">
+          <select required className={inputClass} value={team} onChange={(e) => setTeam(e.target.value as Team)}>
+            {TEAMS.map((t) => (
+              <option key={t}>{t}</option>
+            ))}
+          </select>
+        </Field>
+      )}
+      {needsStatus && (
+        <Field label="Status">
+          <select required className={inputClass} value={status} onChange={(e) => setStatus(e.target.value as BookingStatus)}>
+            <option value="" disabled>
+              Choose status
+            </option>
+            {STATUSES.map((st) => (
+              <option key={st} value={st}>
+                {STATUS_STYLE[st].label}
+              </option>
+            ))}
+          </select>
+        </Field>
+      )}
+      <div className="flex justify-end gap-2 pt-2">
+        <Button variant="ghost" onClick={onDone}>
+          Cancel
+        </Button>
+        <Button variant="primary" type="submit" icon="check">
+          Save
         </Button>
       </div>
     </form>

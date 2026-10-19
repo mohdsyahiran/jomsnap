@@ -7,7 +7,7 @@ import { stockAlerts } from "@/lib/alerts";
 import { useStore } from "@/lib/store";
 import type { Booking } from "@/lib/types";
 import { logout } from "@/app/actions";
-import { BookingModal } from "./BookingModal";
+import { BookingModal, SetupModal } from "./BookingModal";
 import { InvoiceModal } from "./InvoiceModal";
 import { MoneyModal } from "./MoneyModal";
 import { PaymentModal } from "./PaymentModal";
@@ -42,6 +42,7 @@ export function Dashboard({ user }: { user: string }) {
   const [invoiceFor, setInvoiceFor] = useState<Booking | null>(null);
   const [tab, setTab] = useState<TabId>("overview");
   const [bookingModal, setBookingModal] = useState<{ open: boolean; booking: Booking | null }>({ open: false, booking: null });
+  const [setupFor, setSetupFor] = useState<Booking | null>(null);
   const [payModal, setPayModal] = useState<{ open: boolean; id: string | null }>({ open: false, id: null });
   const [now, setNow] = useState(() => Date.now());
 
@@ -154,7 +155,7 @@ export function Dashboard({ user }: { user: string }) {
         </nav>
 
         {tab === "overview" && <Overview onNewBooking={newBooking} onGoto={goto} onPay={pay} />}
-        {tab === "bookings" && <Bookings onNew={newBooking} onEdit={editBooking} onPay={pay} onInvoice={setInvoiceFor} />}
+        {tab === "bookings" && <Bookings onNew={newBooking} onEdit={editBooking} onSetup={setSetupFor} onPay={pay} onInvoice={setInvoiceFor} />}
         {tab === "money" && <Money onAdd={(type) => setMoneyModal({ open: true, type })} onOpenPayment={(id) => pay(id)} />}
         {tab === "calendar" && <Calendar onEdit={editBooking} />}
         {tab === "payments" && <Payments onPay={pay} onInvoice={setInvoiceFor} />}
@@ -227,6 +228,7 @@ export function Dashboard({ user }: { user: string }) {
         </div>
       )}
 
+      <SetupModal booking={setupFor} onClose={() => setSetupFor(null)} />
       <BookingModal open={bookingModal.open} booking={bookingModal.booking} onClose={() => setBookingModal({ open: false, booking: null })} />
       <InvoiceModal booking={invoiceFor} onClose={() => setInvoiceFor(null)} />
       <MoneyModal open={moneyModal.open} type={moneyModal.type} onClose={() => setMoneyModal((m) => ({ ...m, open: false }))} />

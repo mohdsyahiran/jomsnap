@@ -186,7 +186,6 @@ function SalesChart({ bookings, now }: { bookings: Booking[]; now: Date }) {
 }
 
 function NextEvent({ bookings, now, onPay, onGoto }: { bookings: Booking[]; now: Date; onPay: (id: string) => void; onGoto: (t: TabId) => void }) {
-  const { dispatch } = useStore();
   const today = toISODate(now);
   const next = bookings.filter((b) => b.date >= today && b.status !== "completed").sort((a, b) => (a.date + a.startTime).localeCompare(b.date + b.startTime))[0];
 
@@ -237,15 +236,6 @@ function NextEvent({ bookings, now, onPay, onGoto }: { bookings: Booking[]; now:
           </dl>
 
           <div className="mt-auto pt-5 grid grid-cols-2 gap-2">
-            <Button
-              variant="primary"
-              icon="inventory_2"
-              className="col-span-2"
-              disabled={next.suppliesDeducted}
-              onClick={() => dispatch({ type: "recordSupplies", id: next.id })}
-            >
-              {next.suppliesDeducted ? "Supplies recorded" : `Record supplies used (#${next.code})`}
-            </Button>
             {balanceOf(next) > 0 ? (
               <Button icon="add_card" onClick={() => onPay(next.id)}>
                 Payment
