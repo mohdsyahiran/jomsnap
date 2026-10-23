@@ -16,7 +16,7 @@ export type Payment = {
 
 export type Extra = { label: string; amount: number };
 
-export type PayMethod = "transfer" | "cash" | "duitnow" | "other";
+export type PayMethod = "transfer" | "cash" | "duitnow" | "other" | "paylater";
 
 export type Booking = {
   id: string;

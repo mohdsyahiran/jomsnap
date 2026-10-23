@@ -1,12 +1,13 @@
 "use client";
 
 import { useState } from "react";
+import { PAY_METHODS } from "@/lib/constants";
 import { balanceOf, formatDate, formatRM2, paidOf, toISODate, totalOf } from "@/lib/format";
 import { useStore } from "@/lib/store";
 import type { Payment } from "@/lib/types";
 import { Button, Field, Icon, inputClass, Modal } from "./ui";
 
-const METHODS: Record<Payment["method"], string> = { transfer: "Bank transfer", duitnow: "DuitNow QR", cash: "Cash", other: "Other" };
+const METHODS: Record<Exclude<Payment["method"], "paylater">, string> = { transfer: "Bank transfer", duitnow: "DuitNow QR", cash: "Cash", other: "Other" };
 
 export function PaymentModal({ bookingId, open, onClose }: { bookingId: string | null; open: boolean; onClose: () => void }) {
   return (
@@ -74,7 +75,7 @@ function PaymentForm({ initialId, onDone }: { initialId: string | null; onDone: 
               {booking.payments.map((p) => (
                 <li key={p.id} className="flex items-center justify-between gap-2 text-label-md">
                   <span className="text-on-surface-variant">
-                    {formatDate(p.date)} · {METHODS[p.method]}
+                    {formatDate(p.date)} · {PAY_METHODS[p.method]}
                     {p.note ? ` · ${p.note}` : ""}
                   </span>
                   <span className="flex items-center gap-1 tabular-nums">

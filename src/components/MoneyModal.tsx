@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { MONEY_IN_CATEGORIES, MONEY_OUT_CATEGORIES, PAY_METHODS } from "@/lib/constants";
+import { MONEY_IN_CATEGORIES, MONEY_OUT_CATEGORIES, MONEY_PAY_METHODS, PAY_METHODS } from "@/lib/constants";
 import { toISODate } from "@/lib/format";
 import { useStore } from "@/lib/store";
 import type { PayMethod } from "@/lib/types";
@@ -24,7 +24,7 @@ function MoneyForm({ initialType, onDone }: { initialType: "in" | "out"; onDone:
   const [category, setCategory] = useState<string>(cats[0].id);
   const [amount, setAmount] = useState<number | "">("");
   const [date, setDate] = useState(() => toISODate(new Date()));
-  const [method, setMethod] = useState<PayMethod>(type === "out" ? "cash" : "transfer");
+  const [method, setMethod] = useState<PayMethod>("cash");
   const [note, setNote] = useState("");
   const [bookingId, setBookingId] = useState("");
 
@@ -101,9 +101,9 @@ function MoneyForm({ initialType, onDone }: { initialType: "in" | "out"; onDone:
       </Field>
       <Field label="Paid by / method">
         <select className={inputClass} value={method} onChange={(e) => setMethod(e.target.value as PayMethod)}>
-          {Object.entries(PAY_METHODS).map(([k, v]) => (
+          {MONEY_PAY_METHODS.map((k) => (
             <option key={k} value={k}>
-              {v}
+              {PAY_METHODS[k]}
             </option>
           ))}
         </select>

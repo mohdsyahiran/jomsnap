@@ -1,4 +1,4 @@
-import type { BookingStatus, GuestbookStatus, PackageId, Team } from "./types";
+import type { BookingStatus, GuestbookStatus, PackageId, PayMethod, Team } from "./types";
 
 // Mirrors the packages section on the public site (index.html)
 export const PACKAGES: Record<PackageId, { label: string; hours: number; price: number; guestbook: boolean }> = {
@@ -43,8 +43,8 @@ export const STORAGE_KEY = "jomsnap-admin-v2";
 
 export const MONEY_OUT_CATEGORIES = [
   { id: "supplies", label: "Supplies (paper, ink)", icon: "print" },
-  { id: "transport", label: "Fuel & transport", icon: "local_gas_station" },
-  { id: "toll", label: "Toll & parking", icon: "toll" },
+  { id: "transport", label: "Fuel, transport & parking", icon: "local_gas_station" },
+  { id: "designer", label: "Designer", icon: "brush" },
   { id: "crew", label: "Crew pay", icon: "groups" },
   { id: "equipment", label: "Equipment", icon: "photo_camera" },
   { id: "props", label: "Props & backdrop", icon: "celebration" },
@@ -60,8 +60,14 @@ export const MONEY_IN_CATEGORIES = [
   { id: "other-in", label: "Other income", icon: "payments" },
 ] as const;
 
+// No longer offered, but kept so older entries still show a proper name
+const RETIRED_CATEGORIES = [{ id: "toll", label: "Toll & parking", icon: "toll" }];
+
 export function categoryOf(id: string) {
-  return [...MONEY_OUT_CATEGORIES, ...MONEY_IN_CATEGORIES].find((c) => c.id === id) ?? { id, label: id, icon: "sell" };
+  return [...MONEY_OUT_CATEGORIES, ...MONEY_IN_CATEGORIES, ...RETIRED_CATEGORIES].find((c) => c.id === id) ?? { id, label: id, icon: "sell" };
 }
 
-export const PAY_METHODS = { transfer: "Bank transfer", duitnow: "DuitNow QR", cash: "Cash", other: "Other" } as const;
+export const PAY_METHODS = { transfer: "Bank transfer", duitnow: "DuitNow QR", cash: "Cash", other: "Other", paylater: "PayLater" } as const;
+
+/** "Paid by" choices when recording money in/out; older entries may still carry the other methods */
+export const MONEY_PAY_METHODS: PayMethod[] = ["cash", "paylater"];
