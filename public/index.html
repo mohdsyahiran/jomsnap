@@ -4,29 +4,39 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>JomSnap - Professional Photobooth Services</title>
+    <meta name="description" content="Servis photobooth kahwin dan event di Perak, Kuala Lumpur, Selangor, Perlis, Kedah dan Penang. Setup kemas, cetakan berkualiti dan servis profesional untuk majlis anda oleh JomSnap.">
+    <meta name="theme-color" content="#fdfbf7">
+    <link rel="icon" href="logo.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,400;1,500&display=swap">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-    <meta name="description" content="Servis photobooth kahwin dan event di Perak, Kuala Lumpur dan Selangor. Setup kemas, cetakan berkualiti dan servis profesional untuk majlis anda oleh JomSnap.">
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
 
-    <header>
-        <div
-         class="container">
-            <nav>
-                <a href="index.html" class="logo">
-                    <img src="logo.png" alt="JomSnap logo" class="logo-image">
+    <header class="site-header">
+        <div class="container header-inner">
+            <div class="header-brand">
+                <a href="#home" class="logo" aria-label="JomSnap home">
+                    <img src="logo-wide.png" alt="JomSnap" class="logo-image" width="900" height="328">
                 </a>
-                <div class="nav-links">
-                    <a href="#home">Home</a>
-                    <a href="#services">Services</a>
-                    <a href="#packages">Packages</a>
-                    <a href="#contact">Contact</a>
-                </div>
-                <button class="mobile-toggle">&#9776;</button>
+            </div>
+            <nav class="nav-links" id="nav-links">
+                <a href="#home">Home</a>
+                <a href="#services">What's Included</a>
+                <a href="#why">Why JomSnap</a>
+                <a href="#packages">Packages</a>
+                <a href="#contact">Contact</a>
             </nav>
+            <div class="header-actions">
+                <a href="https://wa.me/601161187310" class="btn btn-dark btn-sm" target="_blank" rel="noopener">
+                    <i class="fa-brands fa-whatsapp"></i><span class="hide-xs">Chat on WhatsApp</span>
+                </a>
+                <button class="mobile-toggle" type="button" aria-label="Menu" aria-controls="nav-links" aria-expanded="false">
+                    <i class="fa-solid fa-bars"></i>
+                </button>
+            </div>
         </div>
     </header>
 
@@ -34,130 +44,107 @@
 
         <!-- Hero -->
         <section class="hero" id="home">
-            <div class="container">
-                <div class="hero-content">
-                    <div class="hero-eyebrow">
-                        <span class="eyebrow-line"></span>
-                        Photobooth Specialists
-                        <span class="eyebrow-line"></span>
-                    </div>
-                    <h1>Capture Every Moment<br><em>With Style</em></h1>
-                    <div class="hero-ornament">✦ &nbsp; ✦ &nbsp; ✦</div>
-                    <p class="hero-description">
-                        Professional photobooth services with seamless setup and high-quality photo prints — for weddings, private events and corporate functions.
-                    </p>
-                    <p class="hero-regions">
-                        <i class="fa-solid fa-location-dot"></i> Perak &nbsp;·&nbsp; Kuala Lumpur &nbsp;·&nbsp; Selangor
-                    </p>
-                    <div class="action-buttons">
-                        <a href="https://wa.me/601161187310" class="btn btn-primary" target="_blank">
-                            <i class="fa-brands fa-whatsapp"></i> Get A Quote
-                        </a>
-                        <a href="#packages" class="btn btn-secondary">
-                            View Packages &nbsp;<i class="fa-solid fa-arrow-down fa-xs"></i>
-                        </a>
-                    </div>
-                </div>
+            <div class="hero-glow hero-glow-1"></div>
+            <div class="hero-glow hero-glow-2"></div>
+            <div class="hero-spotlight" aria-hidden="true"></div>
+            <div class="hero-particles" aria-hidden="true">
+                <span>✦</span><span>✦</span><span>✦</span><span>✦</span><span>✦</span><span>✦</span><span>✦</span>
             </div>
-            <div class="hero-scroll-indicator">
-                <div class="scroll-line"></div>
+            <div class="container hero-content">
+                <span class="eyebrow-pill"><span class="pulse-dot"></span>Photobooth Specialists</span>
+                <h1>Capture Every Moment<br><em>With Style</em></h1>
+                <div class="sparkles" aria-hidden="true"><span>✦</span><span>✦</span><span>✦</span></div>
+                <p class="hero-description">
+                    Professional photobooth services with seamless setup and high-quality photo prints — for weddings, private events and corporate functions.
+                </p>
+                <span class="chip"><i class="fa-solid fa-location-dot"></i> Perak · Kuala Lumpur · Selangor · Perlis · Kedah · Penang</span>
+                <div class="action-buttons">
+                    <a href="https://wa.me/601161187310" class="btn btn-dark btn-lg" target="_blank" rel="noopener">
+                        <i class="fa-brands fa-whatsapp"></i> Get A Quote
+                    </a>
+                    <a href="#packages" class="btn btn-light btn-lg">
+                        View Packages <i class="fa-solid fa-arrow-down accent bounce-arrow"></i>
+                    </a>
+                </div>
             </div>
         </section>
 
-        <!-- Stats Strip -->
-        <!-- <section class="stats-strip">
-            <div class="container">
-                <div class="stats-grid">
-                    <div class="stat-item">
-                        <span class="stat-number">2</span>
-                        <span class="stat-label">Event Crew</span>
-                    </div>
-                    <div class="stat-divider"></div>
-                    <div class="stat-item">
-                        <span class="stat-number">3</span>
-                        <span class="stat-label">Regions Covered</span>
-                    </div>
-                    <div class="stat-divider"></div>
-                    <div class="stat-item">
-                        <span class="stat-number">∞</span>
-                        <span class="stat-label">Photo Prints</span>
-                    </div>
-                    <div class="stat-divider"></div>
-                    <div class="stat-item">
-                        <span class="stat-number">24h</span>
-                        <span class="stat-label">Digital Delivery</span>
-                    </div>
-                </div>
-            </div>
-        </section> -->
-
-        <!-- Service Inclusions -->
-        <section class="inclusions" id="services">
+        <!-- What's Included -->
+        <section class="section section-tint" id="services">
             <div class="container">
                 <div class="section-header">
+                    <span class="eyebrow">All-Inclusive Standard</span>
                     <h2>What's Included</h2>
-                    <div class="section-divider"></div>
-                    <p class="section-subtitle">Everything you need for a seamless photobooth experience — all in one package.</p>
+                    <p>Everything you need for a seamless photobooth experience — all in one package.</p>
                 </div>
                 <div class="inclusions-grid">
-                    <div class="inclusion-item">
-                        <div class="inclusion-icon"><i class="fa-solid fa-camera-retro"></i></div>
-                        <span>High-resolution camera system</span>
+                    <div class="card inclusion">
+                        <div class="icon-tile"><i class="fa-solid fa-camera-retro"></i></div>
+                        <h3>High-resolution camera system</h3>
                     </div>
-                    <div class="inclusion-item">
-                        <div class="inclusion-icon"><i class="fa-solid fa-lightbulb"></i></div>
-                        <span>Professional studio lighting</span>
+                    <div class="card inclusion">
+                        <div class="icon-tile"><i class="fa-solid fa-lightbulb"></i></div>
+                        <h3>Professional studio lighting</h3>
                     </div>
-                    <div class="inclusion-item">
-                        <div class="inclusion-icon"><i class="fa-solid fa-print"></i></div>
-                        <span>High quality photo printer</span>
+                    <div class="card inclusion">
+                        <div class="icon-tile"><i class="fa-solid fa-print"></i></div>
+                        <h3>High quality photo printer</h3>
                     </div>
-                    <div class="inclusion-item">
-                        <div class="inclusion-icon"><i class="fa-regular fa-image"></i></div>
-                        <span>Photo frame design — logo, tagline &amp; event date</span>
+                    <div class="card inclusion">
+                        <div class="icon-tile"><i class="fa-regular fa-image"></i></div>
+                        <div>
+                            <h3>Photo frame design</h3>
+                            <p>Logo, tagline &amp; event date</p>
+                        </div>
                     </div>
-                    <div class="inclusion-item">
-                        <div class="inclusion-icon"><i class="fa-solid fa-hat-wizard"></i></div>
-                        <span>Props and accessories</span>
+                    <div class="card inclusion">
+                        <div class="icon-tile"><i class="fa-solid fa-hat-wizard"></i></div>
+                        <h3>Props and accessories</h3>
                     </div>
-                    <div class="inclusion-item">
-                        <div class="inclusion-icon"><i class="fa-solid fa-display"></i></div>
-                        <span>Live view display during photo capture</span>
+                    <div class="card inclusion">
+                        <div class="icon-tile"><i class="fa-solid fa-display"></i></div>
+                        <div>
+                            <h3>Live view display</h3>
+                            <p>During photo capture</p>
+                        </div>
                     </div>
-                    <div class="inclusion-item">
-                        <div class="inclusion-icon"><i class="fa-solid fa-cloud-arrow-up"></i></div>
-                        <span>Digital delivery via secure cloud storage — accessible for 30 days</span>
+                    <div class="card inclusion inclusion-wide">
+                        <div class="icon-tile icon-tile-dark"><i class="fa-solid fa-cloud-arrow-down"></i></div>
+                        <div>
+                            <h3>Digital delivery via secure cloud storage <span class="tag">30 Days</span></h3>
+                            <p>Accessible for 30 days after your event.</p>
+                        </div>
                     </div>
                 </div>
             </div>
         </section>
 
         <!-- Why JomSnap -->
-        <section class="why-us">
+        <section class="section" id="why">
             <div class="container">
-                <div class="section-header light">
+                <div class="section-header center">
+                    <span class="eyebrow">The JomSnap Difference</span>
                     <h2>Why Choose JomSnap</h2>
-                    <div class="section-divider"></div>
-                    <p class="section-subtitle">We deliver more than just photos — we create memories that last a lifetime.</p>
+                    <p>We deliver more than just photos — we create memories that last a lifetime.</p>
                 </div>
                 <div class="why-grid">
-                    <div class="why-card">
-                        <div class="why-icon"><i class="fa-solid fa-camera"></i></div>
+                    <div class="card why-card">
+                        <div class="why-top"><div class="icon-round"><i class="fa-solid fa-camera"></i></div><span class="why-num">01</span></div>
                         <h3>Premium Equipment</h3>
                         <p>Professional-grade camera and studio lighting for every session, ensuring crisp and beautiful results.</p>
                     </div>
-                    <div class="why-card">
-                        <div class="why-icon"><i class="fa-solid fa-palette"></i></div>
+                    <div class="card why-card">
+                        <div class="why-top"><div class="icon-round"><i class="fa-solid fa-palette"></i></div><span class="why-num">02</span></div>
                         <h3>Custom Frame Design</h3>
                         <p>Personalised photo frames with your event logo, theme and date — printed and ready on the spot.</p>
                     </div>
-                    <div class="why-card">
-                        <div class="why-icon"><i class="fa-solid fa-cloud"></i></div>
+                    <div class="card why-card">
+                        <div class="why-top"><div class="icon-round"><i class="fa-solid fa-cloud"></i></div><span class="why-num">03</span></div>
                         <h3>Instant Digital Access</h3>
                         <p>All photos delivered via secure cloud link — guests can download their favourites for up to 30 days.</p>
                     </div>
-                    <div class="why-card">
-                        <div class="why-icon"><i class="fa-solid fa-user-tie"></i></div>
+                    <div class="card why-card">
+                        <div class="why-top"><div class="icon-round"><i class="fa-solid fa-user-group"></i></div><span class="why-num">04</span></div>
                         <h3>Experienced Crew</h3>
                         <p>Our friendly professional team manages the entire setup so you can focus on enjoying your event.</p>
                     </div>
@@ -166,140 +153,137 @@
         </section>
 
         <!-- Packages -->
-        <section class="packages" id="packages">
+        <section class="section section-tint" id="packages">
             <div class="container">
-                <div class="section-header">
+                <div class="section-header center">
+                    <span class="eyebrow">Transparent Pricing</span>
                     <h2>Photobooth Packages</h2>
-                    <div class="section-divider"></div>
-                    <p class="section-subtitle">Flexible pricing tailored to your event type and location.</p>
+                    <p>Flexible pricing tailored to your event type and location.</p>
                 </div>
 
                 <div class="packages-grid">
 
-                    <!-- Basic -->
-                    <div class="package-card">
-                        <div class="package-header">
-                            <h3>Basic</h3>
-                            <div class="package-duration">2 Hours</div>
+                    <div class="card package">
+                        <div class="package-head">
+                            <div>
+                                <h3>Basic</h3>
+                            </div>
+                            <span class="hours">2 Hours</span>
                         </div>
-                        <h4 class="package-price">
-                            <span class="price-old"><span class="currency">RM</span>680</span>
-                            <span class="price-current"><span class="currency">RM</span>580</span>
-                            <span class="per-event">/event</span>
-                        </h4>
-                        <div class="package-features">
-                            <div class="feature"><i class="fa-solid fa-check"></i>2 Hours Service</div>
-                            <div class="feature"><i class="fa-solid fa-check"></i>Unlimited Photo Prints</div>
-                            <div class="feature"><i class="fa-solid fa-check"></i>Backdrop & Props</div>
-                            <div class="feature"><i class="fa-solid fa-check"></i>Digital Copies of All Photos</div>
+                        <div class="price">
+                            <span class="price-old">RM680</span>
+                            <span class="price-now">RM580</span>
+                            <span class="per">/event</span>
                         </div>
-                        <a href="https://wasap.my/601161187310/Hi+Photobooth+Basic" class="btn" target="_blank">
+                        <ul class="features">
+                            <li><i class="fa-regular fa-circle-check"></i>2 Hours Service</li>
+                            <li><i class="fa-regular fa-circle-check"></i>Unlimited Photo Prints</li>
+                            <li><i class="fa-regular fa-circle-check"></i>Backdrop &amp; Props</li>
+                            <li><i class="fa-regular fa-circle-check"></i>Digital Copies of All Photos</li>
+                        </ul>
+                        <a href="https://wa.me/601161187310?text=Hi%20JomSnap%2C%20saya%20berminat%20dengan%20package%20Basic" class="btn btn-soft btn-block" target="_blank" rel="noopener">
                             <i class="fa-brands fa-whatsapp"></i> Request Quote
                         </a>
                     </div>
 
-                    <!-- Standard (center / featured) -->
-                    <div class="package-card featured">
-                        <div class="badge"><i class="fa-solid fa-star"></i> Recommended</div>
-                        <div class="package-header">
-                            <h3>Standard</h3>
-                            <div class="package-duration">3 Hours</div>
+                    <div class="card package featured">
+                        <div class="ribbon"><i class="fa-solid fa-star"></i> Recommended</div>
+                        <div class="package-head">
+                            <div>
+                                <h3>Premium</h3>
+                            </div>
+                            <span class="hours">4 Hours</span>
                         </div>
-                        <h4 class="package-price">
-                            <span class="price-old"><span class="currency">RM</span>790</span>
-                            <span class="price-current"><span class="currency">RM</span>690</span>
-                            <span class="per-event">/event</span>
-                        </h4>
-                        <div class="package-features">
-                            <div class="feature"><i class="fa-solid fa-check"></i>3 Hours Service</div>
-                            <div class="feature"><i class="fa-solid fa-check"></i>Unlimited Photo Prints</div>
-                            <div class="feature"><i class="fa-solid fa-check"></i>Backdrop & Props</div>
-                            <div class="feature"><i class="fa-solid fa-check"></i>Digital Copies of All Photos</div>
-                            <div class="feature"><i class="fa-solid fa-check"></i>Free Guestbook</div>
+                        <div class="price">
+                            <span class="price-old">RM890</span>
+                            <span class="price-now">RM790</span>
+                            <span class="per">/event</span>
                         </div>
-                        <a href="https://wasap.my/601161187310/Hi+Photobooth+Standard" class="btn btn-primary" target="_blank">
+                        <ul class="features">
+                            <li><i class="fa-solid fa-circle-check"></i>4 Hours Service</li>
+                            <li><i class="fa-solid fa-circle-check"></i>Unlimited Photo Prints</li>
+                            <li><i class="fa-solid fa-circle-check"></i>Backdrop &amp; Props</li>
+                            <li><i class="fa-solid fa-circle-check"></i>Digital Copies of All Photos</li>
+                            <li class="strong"><i class="fa-solid fa-gift"></i>Free Guestbook</li>
+                            <li class="perk"><i class="fa-solid fa-envelope-open-text"></i><span>Free Kad Kahwin Digital by <strong>nikahsanding.com</strong></span></li>
+                        </ul>
+                        <a href="https://wa.me/601161187310?text=Hi%20JomSnap%2C%20saya%20berminat%20dengan%20package%20Premium" class="btn btn-dark btn-block" target="_blank" rel="noopener">
                             <i class="fa-brands fa-whatsapp"></i> Request Quote
                         </a>
                     </div>
 
-                    <!-- Premium -->
-                    <div class="package-card">
-                        <div class="package-header">
-                            <h3>Premium</h3>
-                            <div class="package-duration">4 Hours</div>
+                    <div class="card package">
+                        <div class="package-head">
+                            <div>
+                                <h3>Standard</h3>
+                            </div>
+                            <span class="hours">3 Hours</span>
                         </div>
-                        <h4 class="package-price">
-                            <span class="price-old"><span class="currency">RM</span>890</span>
-                            <span class="price-current"><span class="currency">RM</span>790</span>
-                            <span class="per-event">/event</span>
-                        </h4>
-                        <div class="package-features">
-                            <div class="feature"><i class="fa-solid fa-check"></i>4 Hours Service</div>
-                            <div class="feature"><i class="fa-solid fa-check"></i>Unlimited Photo Prints</div>
-                            <div class="feature"><i class="fa-solid fa-check"></i>Backdrop & Props</div>
-                            <div class="feature"><i class="fa-solid fa-check"></i>Digital Copies of All Photos</div>
-                            <div class="feature"><i class="fa-solid fa-check"></i>Free Guestbook</div>
-                            <div class="feature"><i class="fa-solid fa-check"></i>Free Kad Kahwin Digital by nikahsanding.com</div>
+                        <div class="price">
+                            <span class="price-old">RM790</span>
+                            <span class="price-now">RM690</span>
+                            <span class="per">/event</span>
                         </div>
-                        <a href="https://wasap.my/601161187310/Hi+Photobooth+Premium" class="btn" target="_blank">
+                        <ul class="features">
+                            <li><i class="fa-regular fa-circle-check"></i>3 Hours Service</li>
+                            <li><i class="fa-regular fa-circle-check"></i>Unlimited Photo Prints</li>
+                            <li><i class="fa-regular fa-circle-check"></i>Backdrop &amp; Props</li>
+                            <li><i class="fa-regular fa-circle-check"></i>Digital Copies of All Photos</li>
+                            <li class="strong"><i class="fa-solid fa-gift"></i>Free Guestbook</li>
+                        </ul>
+                        <a href="https://wa.me/601161187310?text=Hi%20JomSnap%2C%20saya%20berminat%20dengan%20package%20Standard" class="btn btn-soft btn-block" target="_blank" rel="noopener">
                             <i class="fa-brands fa-whatsapp"></i> Request Quote
                         </a>
                     </div>
 
                 </div>
 
-                <p class="packages-note">
-                    <i class="fa-solid fa-circle-info"></i>
-                    All packages are inclusive of delivery and setup. Additional transport charges may apply for locations outside Perak, Kuala Lumpur and Selangor.
+                <p class="note">
+                    <i class="fa-solid fa-truck"></i>
+                    <span>All packages are inclusive of delivery and setup. Additional transport charges may apply for locations outside Perak, Kuala Lumpur, Selangor, Perlis, Kedah and Penang.</span>
                 </p>
             </div>
         </section>
 
         <!-- Terms & Conditions -->
-        <section class="terms">
+        <section class="section" id="terms">
             <div class="container">
-                <div class="section-header light">
+                <div class="section-header center">
+                    <span class="eyebrow">Booking Info</span>
                     <h2>Terms &amp; Conditions</h2>
-                    <div class="section-divider"></div>
                 </div>
-                <div class="terms-content">
-                    <ul>
-                        <li>Booking slots are secured upon deposit confirmation</li>
-                        <li>Deposits are non-refundable</li>
-                        <li>Additional charges may apply for transportation to the location</li>
-                        <li>Extension hours subject to availability</li>
-                    </ul>
+                <div class="terms-grid">
+                    <div class="card term"><div class="icon-round sm"><i class="fa-solid fa-lock"></i></div><p>Booking slots are secured upon deposit confirmation</p></div>
+                    <div class="card term"><div class="icon-round sm"><i class="fa-solid fa-receipt"></i></div><p>Deposits are non-refundable</p></div>
+                    <div class="card term"><div class="icon-round sm"><i class="fa-solid fa-route"></i></div><p>Additional charges may apply for transportation to the location</p></div>
+                    <div class="card term"><div class="icon-round sm"><i class="fa-regular fa-clock"></i></div><p>Extension hours subject to availability</p></div>
                 </div>
             </div>
         </section>
 
         <!-- Contact -->
-        <section class="contact-section" id="contact">
+        <section class="section section-tint" id="contact">
             <div class="container">
-                <div class="section-header">
+                <div class="cta-panel">
+                    <div class="cta-glow cta-glow-1"></div>
+                    <div class="cta-glow cta-glow-2"></div>
+                    <div class="sparkles" aria-hidden="true"><span>✦</span><span>✦</span><span>✦</span></div>
                     <h2>Let's Make It Happen</h2>
-                    <div class="section-divider"></div>
-                    <p class="section-subtitle">Get a personalised quote for your event — we'd love to hear from you.</p>
-                </div>
-                <div class="contact-cta">
-                    <a href="https://wasap.my/601161187310/Hi+JomSnap" class="btn btn-whatsapp" target="_blank">
-                        <i class="fa-brands fa-whatsapp"></i>
-                        <span>
-                            <strong>Chat on WhatsApp</strong>
-                            <small>+6011-6118 7310</small>
-                        </span>
+                    <p>Get a personalised quote for your event — we'd love to hear from you.</p>
+                    <a href="https://wasap.my/601161187310/Hi+JomSnap" class="btn btn-dark btn-xl" target="_blank" rel="noopener">
+                        <i class="fa-brands fa-whatsapp"></i> Chat on WhatsApp
                     </a>
-                </div>
-                <div class="contact-socials">
-                    <a href="https://www.instagram.com/jomsnapbooth" class="social-link" target="_blank">
-                        <i class="fa-brands fa-instagram"></i>
-                        <span>@jomsnapbooth</span>
-                    </a>
-                    <div class="social-divider"></div>
-                    <a href="https://www.tiktok.com/@jomsnap" class="social-link" target="_blank">
-                        <i class="fa-brands fa-tiktok"></i>
-                        <span>@jomsnap</span>
-                    </a>
+                    <div class="social-pills">
+                        <a href="https://www.instagram.com/jomsnapbooth" class="pill-link" target="_blank" rel="noopener">
+                            <i class="fa-brands fa-instagram"></i> @jomsnapbooth
+                        </a>
+                        <a href="https://www.tiktok.com/@jomsnap" class="pill-link" target="_blank" rel="noopener">
+                            <i class="fa-brands fa-tiktok"></i> @jomsnap
+                        </a>
+                        <a href="https://www.threads.com/@jomsnap.my" class="pill-link" target="_blank" rel="noopener">
+                            <i class="fa-brands fa-threads"></i> @jomsnap.my
+                        </a>
+                    </div>
                 </div>
             </div>
         </section>
@@ -308,24 +292,32 @@
 
     <footer class="site-footer">
         <div class="container">
-            <div class="footer-content">
-                <div class="footer-logo">
-                    <img src="logo.png" alt="JomSnap logo" class="logo-image">
+            <div class="footer-grid">
+                <div class="footer-brand">
+                    <img src="logo-wide.png" alt="JomSnap" class="logo-image" width="900" height="328">
+                    <p>Professional Wedding &amp; Event Photobooth Services.</p>
+                    <span class="footer-region"><i class="fa-solid fa-location-dot"></i> Perak · Kuala Lumpur · Selangor · Perlis · Kedah · Penang</span>
                 </div>
-                <p class="footer-tagline">Professional Wedding &amp; Event Photobooth Services</p>
-                <div class="footer-social">
-                    <a href="https://wasap.my/601161187310/Hi+JomSnap" target="_blank" aria-label="WhatsApp">
-                        <i class="fa-brands fa-whatsapp"></i>
-                    </a>
-                    <a href="https://www.instagram.com/jomsnapbooth" target="_blank" aria-label="Instagram">
-                        <i class="fa-brands fa-instagram"></i>
-                    </a>
-                    <a href="https://www.tiktok.com/@jomsnap" target="_blank" aria-label="TikTok">
-                        <i class="fa-brands fa-tiktok"></i>
-                    </a>
+                <div>
+                    <h4>Quick Links</h4>
+                    <ul class="footer-links">
+                        <li><a href="#services">What's Included</a></li>
+                        <li><a href="#why">Why JomSnap</a></li>
+                        <li><a href="#packages">Packages</a></li>
+                        <li><a href="#terms">Terms &amp; Conditions</a></li>
+                    </ul>
                 </div>
-                <p class="footer-copy">Powered by Niskara Worldwide (KT0620473-X) &nbsp;·&nbsp; &copy; 2026. All rights reserved.</p>
+                <div>
+                    <h4>Connect With Us</h4>
+                    <ul class="footer-links footer-connect">
+                        <li><a href="https://wasap.my/601161187310/Hi+JomSnap" target="_blank" rel="noopener"><span class="icon-round xs"><i class="fa-brands fa-whatsapp"></i></span>+6011-6118 7310</a></li>
+                        <li><a href="https://www.instagram.com/jomsnapbooth" target="_blank" rel="noopener"><span class="icon-round xs"><i class="fa-brands fa-instagram"></i></span>@jomsnapbooth</a></li>
+                        <li><a href="https://www.tiktok.com/@jomsnap" target="_blank" rel="noopener"><span class="icon-round xs"><i class="fa-brands fa-tiktok"></i></span>@jomsnap</a></li>
+                        <li><a href="https://www.threads.com/@jomsnap.my" target="_blank" rel="noopener"><span class="icon-round xs"><i class="fa-brands fa-threads"></i></span>@jomsnap.my</a></li>
+                    </ul>
+                </div>
             </div>
+            <p class="footer-copy">Powered by Niskara Worldwide (KT0620473-X) &nbsp;·&nbsp; &copy; 2026 JomSnap. All rights reserved.</p>
         </div>
     </footer>
 
