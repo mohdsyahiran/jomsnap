@@ -245,14 +245,10 @@ section[id] { scroll-margin-top: var(--header-h); }
 /* Packages */
 .packages-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; align-items: stretch; }
 .package { position: relative; padding: 36px; display: flex; flex-direction: column; gap: 20px; }
-.package-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.package-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding-bottom: 20px; border-bottom: 1px solid var(--border); }
 .tier { font-size: 12px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--text-faint); }
 .package h3 { font-size: 28px; line-height: 36px; font-weight: 600; }
 .hours { font-size: 13px; font-weight: 600; padding: 4px 12px; border-radius: 999px; background: var(--chip); color: var(--espresso); white-space: nowrap; }
-.price { display: flex; align-items: baseline; flex-wrap: wrap; gap: 8px; padding-bottom: 20px; border-bottom: 1px solid var(--border); }
-.price-old { font-size: 15px; color: var(--text-faint); text-decoration: line-through; }
-.price-now { font-family: var(--serif); font-weight: 600; font-size: 44px; line-height: 1; color: var(--espresso); }
-.per { font-size: 13px; color: var(--text-muted); }
 .features { display: flex; flex-direction: column; gap: 12px; flex: 1; }
 .features li { display: flex; align-items: flex-start; gap: 10px; font-size: 14px; line-height: 20px; color: var(--text); }
 .features i { color: var(--caramel); font-size: 16px; margin-top: 2px; width: 18px; text-align: center; flex-shrink: 0; }
@@ -261,7 +257,6 @@ section[id] { scroll-margin-top: var(--header-h); }
 .features .perk strong { text-decoration: underline; text-decoration-color: var(--caramel); text-underline-offset: 2px; }
 .package.featured { border: 2px solid var(--caramel); box-shadow: var(--shadow-feature); transform: translateY(-8px); }
 .package.featured:hover { box-shadow: var(--shadow-feature); }
-.package.featured .price-now { color: var(--caramel); }
 .ribbon {
   position: absolute; top: -14px; left: 50%; transform: translateX(-50%);
   display: inline-flex; align-items: center; gap: 6px; white-space: nowrap;
@@ -363,7 +358,6 @@ section[id] { scroll-margin-top: var(--header-h); }
   .why-card { padding: 24px; }
   .why-num { font-size: 22px; }
   .package { padding: 28px 24px; }
-  .price-now { font-size: 40px; }
   .term { padding: 16px 18px; }
   .cta-panel { padding: 56px 20px; border-radius: 20px; }
   .cta-panel h2 { font-size: 32px; line-height: 40px; }
