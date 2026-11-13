@@ -22,6 +22,21 @@ function payerLabel(p: Investment["paidBy"]) {
   return parts.map((k) => `${k} ${formatRM2(p![k]!)}`).join(" · ");
 }
 
+/**
+ * Instalments due so far, assuming one a month starting a month after the purchase date.
+ * null for items paid in one go.
+ */
+function instalmentsOf(i: Investment, today: string) {
+  if (!i.months || i.months < 2) return null;
+  const [y, m, d] = i.date.split("-").map(Number);
+  const [ty, tm, td] = today.split("-").map(Number);
+  const elapsed = (ty - y) * 12 + (tm - m) - (td < d ? 1 : 0);
+  const paid = Math.max(0, Math.min(i.months, elapsed));
+  const monthly = i.amount / i.months;
+  const left = paid === i.months ? 0 : Math.round((i.amount - monthly * paid) * 100) / 100;
+  return { paid, months: i.months, monthly, left };
+}
+
 const signed = (n: number) => `${n < 0 ? "−" : ""}${formatRM2(Math.abs(n))}`;
 
 export function Roi() {
@@ -120,7 +135,11 @@ function InvestmentList({
   onRemove: (i: Investment) => void;
 }) {
   const total = items.reduce((s, i) => s + i.amount, 0);
-  const monthly = items.reduce((s, i) => s + (i.months && i.months > 1 ? i.amount / i.months : 0), 0);
+  const today = toISODate(new Date());
+  const plans = new Map(items.map((i) => [i.id, instalmentsOf(i, today)]));
+  const running = [...plans.values()].filter((p) => p && p.left > 0);
+  const left = running.reduce((s, p) => s + p!.left, 0);
+  const dueMonthly = running.reduce((s, p) => s + p!.monthly, 0);
   const byMethod = (Object.keys(INVEST_METHODS) as InvestMethod[])
     .map((m) => ({ m, total: items.filter((i) => i.method === m).reduce((s, i) => s + i.amount, 0) }))
     .filter((x) => x.total > 0);
@@ -145,34 +164,52 @@ function InvestmentList({
                 <th className="py-2 px-3 font-semibold">Paid by</th>
                 <th className="py-2 px-3 font-semibold">Method</th>
                 <th className="py-2 px-3 font-semibold text-right">Amount</th>
-                <th className="py-2 px-3 font-semibold text-right">Monthly</th>
+                <th className="py-2 px-3 font-semibold text-right">Instalments</th>
+                <th className="py-2 px-3 font-semibold text-right">Left to pay</th>
                 <th className="py-2 pl-3" />
               </tr>
             </thead>
             <tbody>
-              {items.map((i) => (
-                <tr key={i.id} className="border-b border-outline-variant/20">
-                  <td className="py-2.5 pr-3 whitespace-nowrap text-on-surface-variant">{formatDate(i.date)}</td>
-                  <td className="py-2.5 px-3">
-                    <div className="font-semibold text-on-surface">{i.item}</div>
-                    {i.note && <div className="text-label-md text-on-surface-variant">{i.note}</div>}
-                  </td>
-                  <td className={`py-2.5 px-3 ${i.paidBy ? "" : "text-outline"}`}>{i.paidBy ? payerLabel(i.paidBy) : "Not set"}</td>
-                  <td className="py-2.5 px-3 whitespace-nowrap">{INVEST_METHODS[i.method]}</td>
-                  <td className="py-2.5 px-3 text-right tabular-nums font-semibold">{formatRM2(i.amount)}</td>
-                  <td className="py-2.5 px-3 text-right tabular-nums whitespace-nowrap text-on-surface-variant">
-                    {i.months && i.months > 1 ? `${formatRM2(i.amount / i.months)} × ${i.months}` : "—"}
-                  </td>
-                  <td className="py-2.5 pl-3 text-right whitespace-nowrap">
-                    <button type="button" onClick={() => onEdit(i)} className="p-1 rounded-lg hover:bg-surface-container text-on-surface-variant" aria-label={`Edit ${i.item}`}>
-                      <Icon name="edit" className="text-lg" />
-                    </button>
-                    <button type="button" onClick={() => onRemove(i)} className="p-1 rounded-lg hover:bg-surface-container text-on-surface-variant" aria-label={`Delete ${i.item}`}>
-                      <Icon name="delete" className="text-lg" />
-                    </button>
-                  </td>
-                </tr>
-              ))}
+              {items.map((i) => {
+                const plan = plans.get(i.id);
+                return (
+                  <tr key={i.id} className="border-b border-outline-variant/20">
+                    <td className="py-2.5 pr-3 whitespace-nowrap text-on-surface-variant">{formatDate(i.date)}</td>
+                    <td className="py-2.5 px-3">
+                      <div className="font-semibold text-on-surface">{i.item}</div>
+                      {i.note && <div className="text-label-md text-on-surface-variant">{i.note}</div>}
+                    </td>
+                    <td className={`py-2.5 px-3 ${i.paidBy ? "" : "text-outline"}`}>{i.paidBy ? payerLabel(i.paidBy) : "Not set"}</td>
+                    <td className="py-2.5 px-3 whitespace-nowrap">{INVEST_METHODS[i.method]}</td>
+                    <td className="py-2.5 px-3 text-right tabular-nums font-semibold">{formatRM2(i.amount)}</td>
+                    <td className="py-2.5 px-3 text-right tabular-nums whitespace-nowrap text-on-surface-variant">
+                      {plan ? (
+                        <>
+                          <div>
+                            {formatRM2(plan.monthly)} × {plan.months}
+                          </div>
+                          <div className={`text-label-md ${plan.left ? "" : "text-tertiary font-semibold"}`}>
+                            {plan.left ? `${plan.paid} of ${plan.months} paid · ${plan.months - plan.paid} left` : "Done"}
+                          </div>
+                        </>
+                      ) : (
+                        "—"
+                      )}
+                    </td>
+                    <td className={`py-2.5 px-3 text-right tabular-nums whitespace-nowrap ${plan?.left ? "font-semibold text-secondary" : "text-outline"}`}>
+                      {plan?.left ? formatRM2(plan.left) : "—"}
+                    </td>
+                    <td className="py-2.5 pl-3 text-right whitespace-nowrap">
+                      <button type="button" onClick={() => onEdit(i)} className="p-1 rounded-lg hover:bg-surface-container text-on-surface-variant" aria-label={`Edit ${i.item}`}>
+                        <Icon name="edit" className="text-lg" />
+                      </button>
+                      <button type="button" onClick={() => onRemove(i)} className="p-1 rounded-lg hover:bg-surface-container text-on-surface-variant" aria-label={`Delete ${i.item}`}>
+                        <Icon name="delete" className="text-lg" />
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
             <tfoot>
               <tr className="font-bold text-primary">
@@ -180,11 +217,33 @@ function InvestmentList({
                   Total
                 </td>
                 <td className="pt-3 px-3 text-right tabular-nums">{formatRM2(total)}</td>
-                <td className="pt-3 px-3 text-right tabular-nums whitespace-nowrap">{monthly ? `${formatRM2(monthly)}/mo` : ""}</td>
+                <td className="pt-3 px-3 text-right tabular-nums whitespace-nowrap">{dueMonthly ? `${formatRM2(dueMonthly)}/mo` : ""}</td>
+                <td className="pt-3 px-3 text-right tabular-nums whitespace-nowrap text-secondary">{left ? formatRM2(left) : ""}</td>
                 <td />
               </tr>
             </tfoot>
           </table>
+        </div>
+      )}
+      {running.length > 0 && (
+        <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div className="rounded-xl bg-secondary-fixed p-4 text-on-secondary-fixed">
+            <p className="text-label-md uppercase tracking-wide">Instalments left to pay</p>
+            <p className="mt-1 text-headline-md font-bold tabular-nums">{formatRM2(left)}</p>
+          </div>
+          <div className="rounded-xl bg-surface-container-low p-4">
+            <p className="text-label-md uppercase tracking-wide text-on-surface-variant">Due each month now</p>
+            <p className="mt-1 text-headline-md font-bold tabular-nums text-primary">{formatRM2(dueMonthly)}</p>
+          </div>
+          <div className="rounded-xl bg-surface-container-low p-4">
+            <p className="text-label-md uppercase tracking-wide text-on-surface-variant">Still running</p>
+            <p className="mt-1 text-headline-md font-bold tabular-nums text-primary">
+              {running.length} item{running.length === 1 ? "" : "s"}
+            </p>
+          </div>
+          <p className="sm:col-span-3 text-label-md text-on-surface-variant">
+            Counted as one instalment a month, starting a month after the purchase date. Your card or SPayLater statement may be one month ahead or behind.
+          </p>
         </div>
       )}
       {items.length > 0 && (
