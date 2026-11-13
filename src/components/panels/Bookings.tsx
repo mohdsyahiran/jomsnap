@@ -9,21 +9,23 @@ import { useStore } from "@/lib/store";
 import type { Booking, BookingStatus, Team } from "@/lib/types";
 import { Button, Card, Empty, Icon, inputClass, PanelHeader, Pill } from "../ui";
 
-type Filter = "upcoming" | "all" | BookingStatus;
+/** "depo": active bookings with a balance still owed; "full": active bookings paid in full */
+type Filter = "depo" | "full" | "all" | BookingStatus;
 type TeamFilter = "all" | "none" | Team;
 
 export function Bookings({ onNew, onEdit, onSetup, onPay, onInvoice }: { onNew: () => void; onEdit: (b: Booking) => void; onSetup: (b: Booking) => void; onPay: (id: string) => void; onInvoice: (b: Booking) => void }) {
   const { data, dispatch } = useStore();
-  const [chosenFilter, setFilter] = useState<Filter>("upcoming");
+  const [chosenFilter, setFilter] = useState<Filter>("depo");
   const [q, setQ] = useState("");
   const [team, setTeam] = useState<TeamFilter>("all");
   const today = toISODate(new Date());
 
+  const active = (b: Booking) => b.status !== "cancelled" && b.status !== "completed";
   const matches = (b: Booking, f: Filter) =>
-    f === "all" ? true : f === "upcoming" ? b.date >= today && b.status !== "cancelled" && b.status !== "completed" : b.status === f;
+    f === "all" ? true : f === "depo" ? active(b) && balanceOf(b) > 0 : f === "full" ? active(b) && balanceOf(b) === 0 : b.status === f;
   const count = (f: Filter) => data.bookings.filter((b) => matches(b, f)).length;
   // The "Needs status" chip disappears once every old booking has a status; don't leave it selected
-  const filter: Filter = chosenFilter === "tentative" && !count("tentative") ? "upcoming" : chosenFilter;
+  const filter: Filter = chosenFilter === "tentative" && !count("tentative") ? "depo" : chosenFilter;
 
   const needle = q.trim().toLowerCase();
   const teamMatches = (b: Booking) => team === "all" || (team === "none" ? !b.team : b.team === team);
@@ -32,13 +34,13 @@ export function Bookings({ onNew, onEdit, onSetup, onPay, onInvoice }: { onNew: 
     .filter((b) => matches(b, filter))
     .filter(teamMatches)
     .filter((b) => !needle || `${b.client} ${b.venue} ${b.code} ${b.phone ?? ""}`.toLowerCase().includes(needle))
-    .sort((a, b) => (filter === "upcoming" ? a.date.localeCompare(b.date) : b.date.localeCompare(a.date)));
+    .sort((a, b) => (filter === "depo" || filter === "full" ? a.date.localeCompare(b.date) : b.date.localeCompare(a.date)));
 
   const filters: [Filter, string][] = [
-    ["upcoming", "Upcoming"],
+    ["depo", "Pay Depo"],
     // Old bookings from before "Tentative" was removed, until someone picks a status
     ...(count("tentative") ? ([["tentative", "Needs status"]] as [Filter, string][]) : []),
-    ["confirmed", "Confirmed"],
+    ["full", "Pay Full"],
     ["completed", "Completed"],
     ["cancelled", "Cancelled"],
     ["all", "All"],
