@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { GUESTBOOK_STYLE, PACKAGES, STATUS_STYLE, TEAMS } from "@/lib/constants";
 import { balanceOf, formatRM, formatTime, parseDate, safeUrl, toISODate, totalOf, whatsappLink } from "@/lib/format";
+import { exportBookingsCSV } from "@/lib/bookingsExport";
 import { exportICS } from "@/lib/ics";
 import { canInvoice } from "@/lib/invoice";
 import { useStore } from "@/lib/store";
@@ -54,6 +55,9 @@ export function Bookings({ onNew, onEdit, onSetup, onPay, onInvoice }: { onNew: 
   return (
     <div className="space-y-5">
       <PanelHeader icon="event_available" iconClass="bg-primary-container text-on-primary" title="Booking Register" subtitle="All reservations, packages and client contacts.">
+        <Button icon="table_view" onClick={() => exportBookingsCSV(rows, `jomsnap-bookings-${today}.csv`)} disabled={!rows.length} title="Exports the bookings shown below">
+          Export Excel
+        </Button>
         <Button icon="calendar_month" onClick={() => exportICS(rows, "jomsnap-bookings.ics")} disabled={!rows.length}>
           Export .ICS
         </Button>
