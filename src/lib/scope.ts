@@ -17,6 +17,7 @@ export function scopeData(data: AdminData, team: Team | undefined): AdminData {
     transactions: [],
     investments: [],
     costPerEvent: 0,
+    bank: undefined,
   };
 }
 

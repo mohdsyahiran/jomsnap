@@ -27,7 +27,8 @@ export type Action =
   | { type: "addInvestment"; entry: InvestmentEntry }
   | { type: "updateInvestment"; id: string; entry: InvestmentEntry }
   | { type: "deleteInvestment"; id: string }
-  | { type: "setCostPerEvent"; amount: number };
+  | { type: "setCostPerEvent"; amount: number }
+  | { type: "setBank"; amount: number; asOf: string };
 
 export type InvestmentEntry = Pick<Investment, "date" | "item" | "amount" | "method" | "months" | "paidBy" | "note">;
 
@@ -303,6 +304,13 @@ export function reducer(data: AdminData, action: Stamped): AdminData {
     case "setCostPerEvent":
       if (action.amount === data.costPerEvent) return data;
       return { ...data, costPerEvent: action.amount, audit: log(data, "money", `Cost per event set to ${formatRM(action.amount)}`) };
+
+    case "setBank":
+      return {
+        ...data,
+        bank: { amount: action.amount, asOf: action.asOf, by: action.by },
+        audit: log(data, "money", `Bank balance ${formatRM(action.amount)} as of ${action.asOf}`),
+      };
 
     case "deleteTxn": {
       const t = data.transactions.find((x) => x.id === action.id);

@@ -2,10 +2,10 @@
 
 import { useState } from "react";
 import { categoryOf, PAY_METHODS } from "@/lib/constants";
-import { formatDate, formatRM, formatRM2 } from "@/lib/format";
+import { formatDate, formatRM, formatRM2, toISODate } from "@/lib/format";
 import { buildLedger, exportLedgerCSV, type LedgerEntry } from "@/lib/ledger";
 import { useStore } from "@/lib/store";
-import { Button, Card, Empty, Icon, PanelHeader } from "../ui";
+import { Button, Card, Empty, Field, Icon, inputClass, PanelHeader } from "../ui";
 
 type Period = { kind: "month" | "year"; year: number; month: number };
 
@@ -110,6 +110,8 @@ export function Money({ onAdd, onOpenPayment }: { onAdd: (t: "in" | "out") => vo
         />
       </div>
 
+      <BankCard recorded={cash} />
+
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
         <InOutChart ledger={ledger} period={period} />
         <Breakdown entries={inP} />
@@ -183,6 +185,112 @@ export function Money({ onAdd, onOpenPayment }: { onAdd: (t: "in" | "out") => vo
         )}
       </Card>
     </div>
+  );
+}
+
+/** The real bank balance next to what the records add up to; the gap is money not recorded yet */
+function BankCard({ recorded }: { recorded: number }) {
+  const { data, dispatch } = useStore();
+  const bank = data.bank;
+  const [editing, setEditing] = useState(false);
+  const [amount, setAmount] = useState<number | "">("");
+  const [asOf, setAsOf] = useState("");
+  const gap = bank ? Math.round((recorded - bank.amount) * 100) / 100 : 0;
+  const rm = (n: number) => `${n < 0 ? "−" : ""}${formatRM2(Math.abs(n))}`;
+
+  const open = () => {
+    setAmount(bank?.amount ?? "");
+    setAsOf(toISODate(new Date()));
+    setEditing(true);
+  };
+  const save = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (amount === "" || amount < 0) return;
+    if (await dispatch({ type: "setBank", amount: Number(amount), asOf })) setEditing(false);
+  };
+
+  return (
+    <Card className="p-4 sm:p-6">
+      <div className="flex flex-wrap items-start justify-between gap-3 mb-4">
+        <div>
+          <h3 className="text-headline-sm font-bold text-primary flex items-center gap-2">
+            <Icon name="account_balance" className="text-secondary" />
+            Bank balance
+          </h3>
+          <p className="text-body-sm text-on-surface-variant">The business account&apos;s real balance, checked against all money in and out recorded here.</p>
+        </div>
+        {!editing && (
+          <Button icon={bank ? "edit" : "add"} onClick={open}>
+            {bank ? "Update balance" : "Enter balance"}
+          </Button>
+        )}
+      </div>
+
+      {editing && (
+        <form onSubmit={save} className="mb-4 grid grid-cols-1 sm:grid-cols-[1fr_1fr_auto] gap-3 items-end p-3 rounded-xl bg-surface-container-low">
+          <Field label="Balance in the bank app (RM)">
+            <input
+              required
+              type="number"
+              min={0}
+              step="0.01"
+              inputMode="decimal"
+              className={inputClass}
+              value={amount}
+              onChange={(e) => setAmount(e.target.value === "" ? "" : Number(e.target.value))}
+              autoFocus
+            />
+          </Field>
+          <Field label="Checked on">
+            <input required type="date" className={inputClass} value={asOf} onChange={(e) => setAsOf(e.target.value)} />
+          </Field>
+          <div className="flex gap-2">
+            <Button variant="ghost" onClick={() => setEditing(false)}>
+              Cancel
+            </Button>
+            <Button variant="primary" type="submit" icon="check">
+              Save
+            </Button>
+          </div>
+        </form>
+      )}
+
+      {!bank ? (
+        !editing && <Empty icon="account_balance">Enter the balance from your bank app to see if the records match.</Empty>
+      ) : (
+        <>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="rounded-xl bg-surface-container-low p-4">
+              <p className="text-label-md uppercase tracking-wide text-on-surface-variant">In the bank</p>
+              <p className="mt-1 text-headline-md font-bold tabular-nums text-primary">{rm(bank.amount)}</p>
+              <p className="text-label-md text-outline">
+                As of {formatDate(bank.asOf)}
+                {bank.by && ` · by ${bank.by}`}
+              </p>
+            </div>
+            <div className="rounded-xl bg-surface-container-low p-4">
+              <p className="text-label-md uppercase tracking-wide text-on-surface-variant">Records say</p>
+              <p className="mt-1 text-headline-md font-bold tabular-nums text-primary">{rm(recorded)}</p>
+              <p className="text-label-md text-outline">All money in minus money out</p>
+            </div>
+            <div className={`rounded-xl p-4 ${Math.abs(gap) < 1 ? "bg-tertiary-fixed text-on-tertiary-fixed" : "bg-secondary-fixed text-on-secondary-fixed"}`}>
+              <p className="text-label-md uppercase tracking-wide">Difference</p>
+              <p className="mt-1 text-headline-md font-bold tabular-nums">{Math.abs(gap) < 1 ? "Matches" : rm(Math.abs(gap))}</p>
+              <p className="text-label-md">
+                {Math.abs(gap) < 1 ? "Records and bank agree" : gap > 0 ? "Less in the bank than recorded" : "More in the bank than recorded"}
+              </p>
+            </div>
+          </div>
+          {Math.abs(gap) >= 1 && (
+            <p className="mt-3 text-body-sm text-on-surface-variant">
+              {gap > 0
+                ? "Usually expenses or instalments paid from the account that aren't recorded yet, or client payments that went to another account. Add them under Money out until this matches."
+                : "Usually money that came into the account without being recorded, e.g. owner capital or a payment not yet entered. Add it under Money in until this matches."}
+            </p>
+          )}
+        </>
+      )}
+    </Card>
   );
 }
 

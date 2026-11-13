@@ -135,6 +135,13 @@ export type Investment = {
   createdAt: string;
 };
 
+/** The real balance read off the business bank account, to compare with what the records say */
+export type BankBalance = {
+  amount: number;
+  asOf: string; // YYYY-MM-DD
+  by?: string;
+};
+
 export type AdminData = {
   schemaVersion: 1;
   bookings: Booking[];
@@ -146,5 +153,7 @@ export type AdminData = {
   investments: Investment[];
   /** Typical cost of running one event (paper, ink, transport, crew), for the ROI plan */
   costPerEvent: number;
+  /** Missing until someone enters it */
+  bank?: BankBalance;
   nextCode: number;
 };

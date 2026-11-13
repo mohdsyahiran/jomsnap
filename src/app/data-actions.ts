@@ -53,6 +53,7 @@ const ACTION_TYPES = new Set<Action["type"]>([
   "updateInvestment",
   "deleteInvestment",
   "setCostPerEvent",
+  "setBank",
 ]);
 
 const isMoney = (n: unknown) => typeof n === "number" && Number.isFinite(n) && n >= 0 && n < 10_000_000;
@@ -117,6 +118,7 @@ function validate(a: Action): string | null {
   if ((a.type === "addInvestment" || a.type === "updateInvestment") && !validInvestment(a.entry))
     return "Fill in the item, date and amount, and make the owners' shares add up to the amount";
   if (a.type === "setCostPerEvent" && !isMoney(a.amount)) return "Invalid cost per event";
+  if (a.type === "setBank" && !(isMoney(a.amount) && isDay(a.asOf))) return "Enter the bank balance and the date you checked it";
   if (a.type === "adjustStock" && !(Number.isInteger(a.delta) && Math.abs(a.delta) < 10_000 && (a.cost === undefined || isMoney(a.cost)))) return "Invalid quantity";
   return null;
 }
