@@ -7,6 +7,12 @@ import { useStore } from "@/lib/store";
 import type { Payment } from "@/lib/types";
 import { Button, Field, Icon, inputClass, Modal } from "./ui";
 
+const NOTES = ["Pay Depo", "Pay Full"] as const;
+type PayNote = (typeof NOTES)[number];
+
+/** First payment is usually the deposit; anything after it settles the rest */
+const defaultNote = (b: { payments: unknown[] } | undefined): PayNote => (b?.payments.length ? "Pay Full" : "Pay Depo");
+
 const METHODS: Record<Exclude<Payment["method"], "paylater">, string> = { transfer: "Bank transfer", duitnow: "DuitNow QR", cash: "Cash", other: "Other" };
 
 export function PaymentModal({ bookingId, open, onClose }: { bookingId: string | null; open: boolean; onClose: () => void }) {
@@ -25,14 +31,14 @@ function PaymentForm({ initialId, onDone }: { initialId: string | null; onDone: 
   const [amount, setAmount] = useState(() => (booking ? balanceOf(booking) : 0));
   const [date, setDate] = useState(() => toISODate(new Date()));
   const [method, setMethod] = useState<Payment["method"]>("transfer");
-  const [note, setNote] = useState("");
+  const [note, setNote] = useState<PayNote>(() => defaultNote(booking));
 
   if (!payable.length) return <p className="text-body-sm text-on-surface-variant">Create a booking first.</p>;
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!booking || amount <= 0) return;
-    dispatch({ type: "addPayment", bookingId: booking.id, payment: { amount, date, method, note: note.trim() || undefined } });
+    dispatch({ type: "addPayment", bookingId: booking.id, payment: { amount, date, method, note } });
     onDone();
   };
 
@@ -46,6 +52,7 @@ function PaymentForm({ initialId, onDone }: { initialId: string | null; onDone: 
             setBookingId(e.target.value);
             const b = data.bookings.find((x) => x.id === e.target.value);
             setAmount(b ? balanceOf(b) : 0);
+            setNote(defaultNote(b));
           }}
         >
           {payable.map((b) => (
@@ -112,7 +119,13 @@ function PaymentForm({ initialId, onDone }: { initialId: string | null; onDone: 
         </select>
       </Field>
       <Field label="Note">
-        <input className={inputClass} value={note} onChange={(e) => setNote(e.target.value)} placeholder="Deposit / balance" />
+        <select className={inputClass} value={note} onChange={(e) => setNote(e.target.value as PayNote)}>
+          {NOTES.map((n) => (
+            <option key={n} value={n}>
+              {n}
+            </option>
+          ))}
+        </select>
       </Field>
       <div className="col-span-2 flex justify-end gap-2 pt-2">
         <Button variant="ghost" onClick={onDone}>
