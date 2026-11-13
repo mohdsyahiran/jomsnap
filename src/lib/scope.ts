@@ -15,6 +15,8 @@ export function scopeData(data: AdminData, team: Team | undefined): AdminData {
     unavailability: data.unavailability.filter((u) => u.team === team),
     audit: data.audit.filter((a) => a.team === team),
     transactions: [],
+    investments: [],
+    costPerEvent: 0,
   };
 }
 

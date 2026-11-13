@@ -20,10 +20,11 @@ import { Money } from "./panels/Money";
 import { Overview } from "./panels/Overview";
 import { Payments } from "./panels/Payments";
 import { Reminders } from "./panels/Reminders";
+import { Roi } from "./panels/Roi";
 import { Stock } from "./panels/Stock";
 import { Button, Icon } from "./ui";
 
-export type TabId = "overview" | "bookings" | "money" | "calendar" | "reminders" | "payments" | "stock" | "backup";
+export type TabId = "overview" | "bookings" | "money" | "calendar" | "reminders" | "payments" | "roi" | "stock" | "backup";
 
 const TABS: { id: TabId; label: string; short: string; icon: string }[] = [
   { id: "overview", label: "Overview & Sales", short: "Overview", icon: "dashboard" },
@@ -31,6 +32,7 @@ const TABS: { id: TabId; label: string; short: string; icon: string }[] = [
   { id: "money", label: "Money In & Out", short: "Money", icon: "account_balance" },
   { id: "calendar", label: "Calendar & Reminders", short: "Calendar", icon: "calendar_month" },
   { id: "payments", label: "Payments & Balances", short: "Payments", icon: "payments" },
+  { id: "roi", label: "ROI", short: "ROI", icon: "monitoring" },
   { id: "stock", label: "Stock", short: "Stock", icon: "inventory_2" },
   { id: "backup", label: "Backup & Data", short: "Backup", icon: "cloud_sync" },
 ];
@@ -185,6 +187,7 @@ export function Dashboard({ user }: { user: string }) {
         {tab === "calendar" && <Calendar onEdit={team ? setDetailsFor : editBooking} />}
         {tab === "reminders" && <Reminders />}
         {tab === "payments" && <Payments onPay={pay} onInvoice={setInvoiceFor} />}
+        {tab === "roi" && !team && <Roi />}
         {tab === "stock" && <Stock />}
         {tab === "backup" && <Backup />}
       </main>

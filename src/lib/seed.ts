@@ -1,4 +1,4 @@
-import { TEAMS } from "./constants";
+import { DEFAULT_COST_PER_EVENT, TEAMS } from "./constants";
 import { uid } from "./format";
 import type { AdminData, StockItem, Team } from "./types";
 
@@ -18,6 +18,8 @@ export function emptyData(): AdminData {
     transactions: [],
     stock: TEAMS.flatMap((team) => DEFAULT_STOCK.map((s) => ({ ...s, id: stockId(team, s.id), team }))),
     unavailability: [],
+    investments: [],
+    costPerEvent: DEFAULT_COST_PER_EVENT,
     audit: [{ id: uid(), at: new Date().toISOString(), kind: "system", message: "Started with empty data" }],
     nextCode: 1001,
   };

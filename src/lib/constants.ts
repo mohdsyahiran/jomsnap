@@ -1,4 +1,4 @@
-import type { BookingStatus, GuestbookStatus, PackageId, PayMethod, Team } from "./types";
+import type { BookingStatus, GuestbookStatus, InvestMethod, PackageId, Partner, PayMethod, Team } from "./types";
 
 // Mirrors the packages section on the public site (index.html)
 export const PACKAGES: Record<PackageId, { label: string; hours: number; price: number; guestbook: boolean }> = {
@@ -68,6 +68,12 @@ export function categoryOf(id: string) {
 }
 
 export const PAY_METHODS = { transfer: "Bank transfer", duitnow: "DuitNow QR", cash: "Cash", other: "Other", paylater: "PayLater" } as const;
+
+export const INVEST_METHODS: Record<InvestMethod, string> = { cash: "Cash", card: "Credit Card", paylater: "SPayLater" };
+
+export const PARTNERS = ["Syahiran", "Mullah"] as const satisfies readonly Partner[];
+
+export const DEFAULT_COST_PER_EVENT = 250;
 
 /** "Paid by" choices when recording money in/out; older entries may still carry the other methods */
 export const MONEY_PAY_METHODS: PayMethod[] = ["cash", "paylater"];

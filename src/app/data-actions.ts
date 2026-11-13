@@ -2,9 +2,9 @@
 
 import { cookies } from "next/headers";
 import { loadSnapshot, saveSnapshot, type Snapshot } from "@/lib/db";
-import { STATUSES, TEAMS } from "@/lib/constants";
+import { INVEST_METHODS, PARTNERS, STATUSES, TEAMS } from "@/lib/constants";
 import { safeUrl } from "@/lib/format";
-import { isAdminData, normalize, reducer, type Action } from "@/lib/reducer";
+import { isAdminData, normalize, reducer, type Action, type InvestmentEntry } from "@/lib/reducer";
 import { scopeSnapshot } from "@/lib/scope";
 import { SESSION_COOKIE, verifyToken, type Session } from "@/lib/session";
 import type { AdminData } from "@/lib/types";
@@ -49,9 +49,41 @@ const ACTION_TYPES = new Set<Action["type"]>([
   "addUnavailable",
   "deleteUnavailable",
   "setPrep",
+  "addInvestment",
+  "updateInvestment",
+  "deleteInvestment",
+  "setCostPerEvent",
 ]);
 
 const isMoney = (n: unknown) => typeof n === "number" && Number.isFinite(n) && n >= 0 && n < 10_000_000;
+
+/** Each owner's share must add up to the amount (to the sen) */
+function validPaidBy(p: InvestmentEntry["paidBy"], amount: number) {
+  if (p === undefined) return true;
+  if (!p || typeof p !== "object") return false;
+  const entries = Object.entries(p);
+  return (
+    entries.length > 0 &&
+    entries.every(([k, v]) => (PARTNERS as readonly string[]).includes(k) && isMoney(v)) &&
+    Math.abs(entries.reduce((s, [, v]) => s + (v as number), 0) - amount) < 0.005
+  );
+}
+
+function validInvestment(e: InvestmentEntry | undefined) {
+  return (
+    !!e &&
+    isDay(e.date) &&
+    typeof e.item === "string" &&
+    !!e.item.trim() &&
+    e.item.length <= 100 &&
+    isMoney(e.amount) &&
+    e.amount > 0 &&
+    Object.hasOwn(INVEST_METHODS, e.method) &&
+    (e.months === undefined || (Number.isInteger(e.months) && e.months >= 1 && e.months <= 60)) &&
+    validPaidBy(e.paidBy, e.amount) &&
+    (e.note === undefined || (typeof e.note === "string" && e.note.length <= 200))
+  );
+}
 
 function validate(a: Action): string | null {
   if (!a || !ACTION_TYPES.has(a.type)) return "Unknown action";
@@ -82,6 +114,9 @@ function validate(a: Action): string | null {
     )
   )
     return "Pick a valid date range (the end can't be before the start)";
+  if ((a.type === "addInvestment" || a.type === "updateInvestment") && !validInvestment(a.entry))
+    return "Fill in the item, date and amount, and make the owners' shares add up to the amount";
+  if (a.type === "setCostPerEvent" && !isMoney(a.amount)) return "Invalid cost per event";
   if (a.type === "adjustStock" && !(Number.isInteger(a.delta) && Math.abs(a.delta) < 10_000 && (a.cost === undefined || isMoney(a.cost)))) return "Invalid quantity";
   return null;
 }

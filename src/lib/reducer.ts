@@ -1,8 +1,8 @@
 // Pure state transitions, shared by the browser and the server actions that persist to Neon
-import { PACKAGES, SUPPLIES_PER_EVENT, TEAMS } from "./constants";
+import { DEFAULT_COST_PER_EVENT, PACKAGES, SUPPLIES_PER_EVENT, TEAMS } from "./constants";
 import { formatRM, toISODate, uid } from "./format";
 import { DEFAULT_STOCK, stockId } from "./seed";
-import type { AdminData, AuditEntry, Booking, GuestbookStatus, Payment, PrepItem, StockItem, Team, Transaction, Unavailability } from "./types";
+import type { AdminData, AuditEntry, Booking, GuestbookStatus, Investment, Payment, PrepItem, StockItem, Team, Transaction, Unavailability } from "./types";
 
 export type Action =
   | { type: "load"; data: AdminData }
@@ -23,7 +23,13 @@ export type Action =
   | { type: "issueInvoice"; id: string; invoiceNo: string }
   | { type: "addUnavailable"; entry: Pick<Unavailability, "team" | "from" | "to" | "note"> }
   | { type: "deleteUnavailable"; id: string }
-  | { type: "setPrep"; id: string; item: PrepItem; done: boolean };
+  | { type: "setPrep"; id: string; item: PrepItem; done: boolean }
+  | { type: "addInvestment"; entry: InvestmentEntry }
+  | { type: "updateInvestment"; id: string; entry: InvestmentEntry }
+  | { type: "deleteInvestment"; id: string }
+  | { type: "setCostPerEvent"; amount: number };
+
+export type InvestmentEntry = Pick<Investment, "date" | "item" | "amount" | "method" | "months" | "paidBy" | "note">;
 
 /** Who made the change; set on the server from the signed-in session */
 export type Stamped = Action & { by?: string };
@@ -262,6 +268,42 @@ export function reducer(data: AdminData, action: Stamped): AdminData {
       };
     }
 
+    case "addInvestment": {
+      const inv: Investment = { ...action.entry, id: uid(), by: action.by, createdAt: new Date().toISOString() };
+      return {
+        ...data,
+        investments: [...data.investments, inv],
+        audit: log(data, "money", `Investment ${inv.item} ${formatRM(inv.amount)}`),
+      };
+    }
+
+    case "updateInvestment": {
+      const inv = data.investments.find((x) => x.id === action.id);
+      if (!inv) return data;
+      // Replace every editable field, so a cleared one (e.g. note) doesn't linger
+      const { months, paidBy, note, ...rest } = action.entry;
+      const updated: Investment = { id: inv.id, by: inv.by, createdAt: inv.createdAt, ...rest, months, paidBy, note };
+      return {
+        ...data,
+        investments: data.investments.map((x) => (x.id === inv.id ? updated : x)),
+        audit: log(data, "money", `Updated investment ${updated.item} ${formatRM(updated.amount)}`),
+      };
+    }
+
+    case "deleteInvestment": {
+      const inv = data.investments.find((x) => x.id === action.id);
+      if (!inv) return data;
+      return {
+        ...data,
+        investments: data.investments.filter((x) => x.id !== inv.id),
+        audit: log(data, "money", `Deleted investment ${inv.item} ${formatRM(inv.amount)}`),
+      };
+    }
+
+    case "setCostPerEvent":
+      if (action.amount === data.costPerEvent) return data;
+      return { ...data, costPerEvent: action.amount, audit: log(data, "money", `Cost per event set to ${formatRM(action.amount)}`) };
+
     case "deleteTxn": {
       const t = data.transactions.find((x) => x.id === action.id);
       if (!t) return data;
@@ -308,5 +350,7 @@ export function normalize(d: AdminData): AdminData {
     bookings,
     transactions: Array.isArray(d.transactions) ? d.transactions : [],
     unavailability: Array.isArray(d.unavailability) ? d.unavailability : [],
+    investments: Array.isArray(d.investments) ? d.investments : [],
+    costPerEvent: typeof d.costPerEvent === "number" ? d.costPerEvent : DEFAULT_COST_PER_EVENT,
   };
 }

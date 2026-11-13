@@ -113,6 +113,28 @@ export type Transaction = {
   createdAt: string;
 };
 
+/** How a one-off investment was paid for */
+export type InvestMethod = "cash" | "card" | "paylater";
+
+/** The owners who put their own money into the business */
+export type Partner = "Syahiran" | "Mullah";
+
+/** Equipment and setup bought to start the business; ROI measures earning this back */
+export type Investment = {
+  id: string;
+  date: string; // YYYY-MM-DD
+  item: string;
+  amount: number;
+  method: InvestMethod;
+  /** Paid in instalments over this many months */
+  months?: number;
+  /** How much each owner paid; missing on items nobody has filled in yet */
+  paidBy?: Partial<Record<Partner, number>>;
+  note?: string;
+  by?: string;
+  createdAt: string;
+};
+
 export type AdminData = {
   schemaVersion: 1;
   bookings: Booking[];
@@ -120,5 +142,9 @@ export type AdminData = {
   audit: AuditEntry[];
   transactions: Transaction[];
   unavailability: Unavailability[];
+  /** Missing in data saved before the ROI tab */
+  investments: Investment[];
+  /** Typical cost of running one event (paper, ink, transport, crew), for the ROI plan */
+  costPerEvent: number;
   nextCode: number;
 };
