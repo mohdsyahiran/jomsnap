@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { GUESTBOOK_STYLE, PACKAGES, STATUS_STYLE, TEAMS } from "@/lib/constants";
-import { balanceOf, formatRM, formatTime, parseDate, safeUrl, toISODate, totalOf, whatsappLink } from "@/lib/format";
+import { balanceOf, formatRM, formatTime, paidOf, parseDate, safeUrl, toISODate, totalOf, whatsappLink } from "@/lib/format";
 import { exportICS } from "@/lib/ics";
 import { canInvoice } from "@/lib/invoice";
 import { useStore } from "@/lib/store";
@@ -135,7 +135,15 @@ export function Bookings({ onNew, onEdit, onSetup, onPay, onInvoice }: { onNew: 
                       <p className="text-label-md text-outline mt-0.5">
                         {b.eventType} · {PACKAGES[b.packageId].label} · {formatRM(totalOf(b))}
                         {b.extras?.length ? ` (incl. ${b.extras.map((e) => e.label).join(", ")})` : ""}
-                        {bal > 0 && <span className="text-secondary font-semibold"> · balance {formatRM(bal)}</span>}
+                        {b.status !== "cancelled" &&
+                          (bal > 0 ? (
+                            <span className="text-secondary font-semibold">
+                              {" "}
+                              · Paid: {paidOf(b) > 0 ? "Pay Depo" : "Not yet"} · balance {formatRM(bal)}
+                            </span>
+                          ) : (
+                            <span className="text-tertiary font-semibold"> · Paid: Pay Full</span>
+                          ))}
                         {b.suppliesDeducted && <span className="text-tertiary"> · supplies recorded</span>}
                       </p>
                       {(b.backdrop || design) && (
