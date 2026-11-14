@@ -13,6 +13,7 @@ export function scopeData(data: AdminData, team: Team | undefined): AdminData {
     bookings: data.bookings.filter((b) => b.team === team).map(forCrew),
     stock: data.stock.filter((s) => s.team === team),
     unavailability: data.unavailability.filter((u) => u.team === team),
+    checklist: data.checklist.filter((c) => c.team === team),
     audit: data.audit.filter((a) => a.team === team),
     transactions: [],
     investments: [],

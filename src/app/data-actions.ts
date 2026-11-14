@@ -28,7 +28,9 @@ function forbidden(a: Action, session: Session, data: AdminData): string | null 
   if ((a.type === "setGuestbook" || a.type === "setPrep") && data.bookings.find((b) => b.id === a.id)?.team === team) return null;
   if (a.type === "addUnavailable" && a.entry.team === team) return null;
   if (a.type === "deleteUnavailable" && data.unavailability.find((u) => u.id === a.id)?.team === team) return null;
-  return "Your login can only update your team's stock, guestbooks, event prep and unavailability.";
+  if ((a.type === "tickChecklist" || a.type === "removeChecklistItem") && data.checklist.find((c) => c.id === a.id)?.team === team) return null;
+  if ((a.type === "addChecklistItem" || a.type === "resetChecklist") && a.team === team) return null;
+  return "Your login can only update your team's stock, checklist, guestbooks, event prep and unavailability.";
 }
 
 const isDay = (s: unknown) => typeof s === "string" && /^\d{4}-\d{2}-\d{2}$/.test(s) && !Number.isNaN(Date.parse(s));
@@ -55,6 +57,10 @@ const ACTION_TYPES = new Set<Action["type"]>([
   "deleteInvestment",
   "setCostPerEvent",
   "setBank",
+  "tickChecklist",
+  "addChecklistItem",
+  "removeChecklistItem",
+  "resetChecklist",
 ]);
 
 const isMoney = (n: unknown) => typeof n === "number" && Number.isFinite(n) && n >= 0 && n < 10_000_000;
@@ -132,6 +138,10 @@ function validate(a: Action): string | null {
   if ((a.type === "addInvestment" || a.type === "updateInvestment") && !validInvestment(a.entry))
     return "Fill in the item, date and amount, and make the owners' shares add up to the amount";
   if (a.type === "setCostPerEvent" && !isMoney(a.amount)) return "Invalid cost per event";
+  if (a.type === "tickChecklist" && typeof a.done !== "boolean") return "Invalid checklist update";
+  if (a.type === "addChecklistItem" && !((TEAMS as readonly string[]).includes(a.team) && typeof a.label === "string" && a.label.trim() && a.label.length <= 60))
+    return "Type the item name (up to 60 characters)";
+  if (a.type === "resetChecklist" && !(TEAMS as readonly string[]).includes(a.team)) return "Invalid team";
   if (a.type === "setBank" && !(isMoney(a.amount) && isDay(a.asOf))) return "Enter the bank balance and the date you checked it";
   if (a.type === "adjustStock" && !(Number.isInteger(a.delta) && Math.abs(a.delta) < 10_000 && (a.cost === undefined || isMoney(a.cost)))) return "Invalid quantity";
   return null;

@@ -1,7 +1,7 @@
 // Pure state transitions, shared by the browser and the server actions that persist to Neon
 import { DEFAULT_COST_PER_EVENT, PACKAGES, SUPPLIES_PER_EVENT, TEAMS } from "./constants";
 import { formatRM, toISODate, uid } from "./format";
-import { DEFAULT_STOCK, stockId } from "./seed";
+import { DEFAULT_STOCK, defaultChecklist, stockId } from "./seed";
 import type { AdminData, AuditEntry, Booking, GuestbookStatus, Investment, Payment, PrepItem, StockItem, Team, Transaction, Unavailability } from "./types";
 
 export type Action =
@@ -29,7 +29,11 @@ export type Action =
   | { type: "updateInvestment"; id: string; entry: InvestmentEntry }
   | { type: "deleteInvestment"; id: string }
   | { type: "setCostPerEvent"; amount: number }
-  | { type: "setBank"; amount: number; asOf: string };
+  | { type: "setBank"; amount: number; asOf: string }
+  | { type: "tickChecklist"; id: string; done: boolean }
+  | { type: "addChecklistItem"; team: Team; label: string }
+  | { type: "removeChecklistItem"; id: string }
+  | { type: "resetChecklist"; team: Team };
 
 export type InvestmentEntry = Pick<Investment, "date" | "item" | "amount" | "method" | "months" | "settled" | "paidBy" | "note">;
 
@@ -310,6 +314,28 @@ export function reducer(data: AdminData, action: Stamped): AdminData {
         audit: log(data, "money", `Bank balance ${formatRM(action.amount)} as of ${action.asOf}`),
       };
 
+    // Ticks aren't logged; they change too often to be useful in the activity log
+    case "tickChecklist":
+      return { ...data, checklist: data.checklist.map((c) => (c.id === action.id ? { ...c, done: action.done } : c)) };
+
+    case "addChecklistItem": {
+      const item = { id: uid(), team: action.team, label: action.label.trim(), done: false };
+      return { ...data, checklist: [...data.checklist, item], audit: log(data, "stock", `Checklist: added ${item.label}`, item.team) };
+    }
+
+    case "removeChecklistItem": {
+      const c = data.checklist.find((x) => x.id === action.id);
+      if (!c) return data;
+      return { ...data, checklist: data.checklist.filter((x) => x.id !== c.id), audit: log(data, "stock", `Checklist: removed ${c.label}`, c.team) };
+    }
+
+    case "resetChecklist":
+      return {
+        ...data,
+        checklist: data.checklist.map((c) => (c.team === action.team ? { ...c, done: false } : c)),
+        audit: log(data, "stock", `Checklist cleared for the next event`, action.team),
+      };
+
     case "deleteTxn": {
       const t = data.transactions.find((x) => x.id === action.id);
       if (!t) return data;
@@ -358,5 +384,6 @@ export function normalize(d: AdminData): AdminData {
     unavailability: Array.isArray(d.unavailability) ? d.unavailability : [],
     investments: Array.isArray(d.investments) ? d.investments : [],
     costPerEvent: typeof d.costPerEvent === "number" ? d.costPerEvent : DEFAULT_COST_PER_EVENT,
+    checklist: Array.isArray(d.checklist) ? d.checklist : defaultChecklist(),
   };
 }

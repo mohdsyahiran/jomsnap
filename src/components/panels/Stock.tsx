@@ -5,7 +5,7 @@ import { guestbookTasks, isLow, stockAlerts, type GuestbookTask } from "@/lib/al
 import { GUESTBOOK_LEAD_DAYS, GUESTBOOK_STYLE } from "@/lib/constants";
 import { formatDate, parseDate, timeAgo, toISODate } from "@/lib/format";
 import { useStore } from "@/lib/store";
-import type { Booking, StockItem } from "@/lib/types";
+import type { Booking, StockItem, Team } from "@/lib/types";
 import { Button, Card, Empty, Field, Icon, inputClass, Modal, PanelHeader, Pill } from "../ui";
 
 export function Stock() {
@@ -66,6 +66,8 @@ export function Stock() {
           ),
         )}
       </div>
+
+      <Checklist team={team ?? "HQ"} />
 
       <GuestbookOrders today={today} onOrder={setOrdering} />
 
@@ -281,6 +283,92 @@ function GuestbookOrders({ today, onOrder }: { today: string; onOrder: (b: Booki
             );
           })}
         </ul>
+      )}
+    </Card>
+  );
+}
+
+/** What to pack for an event: tick as it goes in the car, clear for the next event */
+function Checklist({ team }: { team: Team }) {
+  const { data, dispatch } = useStore();
+  const items = data.checklist.filter((c) => c.team === team);
+  const done = items.filter((c) => c.done).length;
+  const [label, setLabel] = useState("");
+  const [editing, setEditing] = useState(false);
+
+  const add = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!label.trim()) return;
+    dispatch({ type: "addChecklistItem", team, label: label.trim() });
+    setLabel("");
+  };
+
+  return (
+    <Card className="p-4 sm:p-6">
+      <div className="flex flex-wrap items-start justify-between gap-3 mb-3">
+        <div>
+          <h3 className="text-headline-sm font-bold text-primary flex items-center gap-2">
+            <Icon name="checklist" className="text-secondary" />
+            Photobooth checklist{team !== "HQ" && ` · ${team}`}
+          </h3>
+          <p className="text-body-sm text-on-surface-variant">Tick everything as it&apos;s packed for the event. Clear the ticks afterwards for the next one.</p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <Button variant="ghost" icon={editing ? "check" : "edit"} onClick={() => setEditing((v) => !v)}>
+            {editing ? "Done editing" : "Edit list"}
+          </Button>
+          <Button icon="restart_alt" disabled={!done} onClick={() => confirm("Clear all ticks for the next event?") && dispatch({ type: "resetChecklist", team })}>
+            Clear ticks
+          </Button>
+        </div>
+      </div>
+
+      <div className="flex items-center gap-3 mb-4">
+        <div className="flex-1 h-2.5 rounded-full bg-surface-container-high overflow-hidden">
+          <div className={`h-full rounded-full ${done === items.length && items.length ? "bg-tertiary" : "bg-secondary"}`} style={{ width: `${items.length ? (done / items.length) * 100 : 0}%` }} />
+        </div>
+        <span className={`text-label-md font-semibold tabular-nums ${done === items.length && items.length ? "text-tertiary" : "text-on-surface-variant"}`}>
+          {done === items.length && items.length ? "All packed ✓" : `${done} / ${items.length} packed`}
+        </span>
+      </div>
+
+      {items.length === 0 ? (
+        <Empty icon="checklist">No items yet. Use Edit list to add what goes to every event.</Empty>
+      ) : (
+        <ul className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-1.5">
+          {items.map((c) => (
+            <li key={c.id} className={`flex items-center gap-2 rounded-lg px-3 py-2 ${c.done ? "bg-tertiary-fixed/60" : "bg-surface-container-low"}`}>
+              <label className="flex flex-1 items-center gap-2.5 min-w-0 cursor-pointer">
+                <input
+                  type="checkbox"
+                  className="w-4 h-4 shrink-0 accent-[#865225]"
+                  checked={c.done}
+                  onChange={(e) => dispatch({ type: "tickChecklist", id: c.id, done: e.target.checked })}
+                />
+                <span className={`text-body-sm truncate ${c.done ? "line-through text-on-surface-variant" : "text-on-surface"}`}>{c.label}</span>
+              </label>
+              {editing && (
+                <button
+                  type="button"
+                  aria-label={`Remove ${c.label}`}
+                  className="p-1 rounded text-outline hover:bg-error-container hover:text-on-error-container"
+                  onClick={() => confirm(`Remove "${c.label}" from the checklist?`) && dispatch({ type: "removeChecklistItem", id: c.id })}
+                >
+                  <Icon name="close" className="text-base" />
+                </button>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {editing && (
+        <form onSubmit={add} className="mt-3 flex gap-2">
+          <input className={inputClass} maxLength={60} value={label} onChange={(e) => setLabel(e.target.value)} placeholder="Add an item, e.g. Tripod" aria-label="New checklist item" />
+          <Button variant="primary" type="submit" icon="add" disabled={!label.trim()}>
+            Add
+          </Button>
+        </form>
       )}
     </Card>
   );

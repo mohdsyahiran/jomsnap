@@ -74,6 +74,14 @@ export type StockItem = {
   min: number;
 };
 
+/** One thing to pack for an event; each team keeps its own list */
+export type ChecklistItem = {
+  id: string;
+  team: Team;
+  label: string;
+  done: boolean;
+};
+
 /** Things to get ready in the week before an event */
 export type PrepItem = "guestbook" | "design" | "backdrop";
 
@@ -165,5 +173,7 @@ export type AdminData = {
   costPerEvent: number;
   /** Missing until someone enters it */
   bank?: BankBalance;
+  /** Photobooth packing checklist; missing in data saved before it existed */
+  checklist: ChecklistItem[];
   nextCode: number;
 };
