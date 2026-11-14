@@ -1,6 +1,6 @@
-import { categoryOf, PAY_METHODS } from "./constants";
+import { categoryOf, COST_ITEMS, PAY_METHODS } from "./constants";
 import { download } from "./download";
-import type { AdminData, PayMethod } from "./types";
+import type { AdminData, CostKey, PayMethod } from "./types";
 
 export type LedgerEntry = {
   key: string;
@@ -9,13 +9,17 @@ export type LedgerEntry = {
   amount: number;
   category: string;
   label: string;
-  method: PayMethod;
+  /** Booking costs don't record how they were paid */
+  method?: PayMethod;
   by?: string;
-  /** Booking payments are edited from the booking; manual entries can be deleted here */
-  source: { kind: "payment"; bookingId: string } | { kind: "txn"; id: string };
+  /** Booking payments and costs are edited from the booking; manual entries can be deleted here */
+  source: { kind: "payment"; bookingId: string } | { kind: "cost"; bookingId: string } | { kind: "txn"; id: string };
 };
 
-/** Every ringgit in or out: booking payments plus manual money entries, newest first. */
+// Booking cost types → money out categories
+const COST_CATEGORY: Record<CostKey, string> = { crew: "crew", designer: "designer", transport: "transport", guestbook: "guestbook", other: "other-out" };
+
+/** Every ringgit in or out: booking payments, booking costs (on the event date) and manual money entries, newest first. */
 export function buildLedger(data: AdminData): LedgerEntry[] {
   const fromPayments: LedgerEntry[] = data.bookings.flatMap((b) =>
     b.payments.map((p) => ({
@@ -30,6 +34,19 @@ export function buildLedger(data: AdminData): LedgerEntry[] {
       source: { kind: "payment" as const, bookingId: b.id },
     })),
   );
+  const fromCosts: LedgerEntry[] = data.bookings
+    .filter((b) => b.status !== "cancelled")
+    .flatMap((b) =>
+      (b.costs ?? []).map((c, i) => ({
+        key: `c-${b.id}-${i}`,
+        date: b.date,
+        type: "out" as const,
+        amount: c.amount,
+        category: COST_CATEGORY[c.type] ?? "other-out",
+        label: `#${b.code} ${b.client} · ${(c.type === "other" && c.note) || COST_ITEMS.find((x) => x.id === c.type)?.label || c.type}`,
+        source: { kind: "cost" as const, bookingId: b.id },
+      })),
+    );
   const fromTxns: LedgerEntry[] = data.transactions.map((t) => ({
     key: `t-${t.id}`,
     date: t.date,
@@ -41,7 +58,7 @@ export function buildLedger(data: AdminData): LedgerEntry[] {
     by: t.by,
     source: { kind: "txn" as const, id: t.id },
   }));
-  return [...fromPayments, ...fromTxns].sort((a, b) => b.date.localeCompare(a.date));
+  return [...fromPayments, ...fromCosts, ...fromTxns].sort((a, b) => b.date.localeCompare(a.date));
 }
 
 export function exportLedgerCSV(entries: LedgerEntry[], filename: string) {
@@ -53,7 +70,7 @@ export function exportLedgerCSV(entries: LedgerEntry[], filename: string) {
       e.type === "in" ? "Money in" : "Money out",
       categoryOf(e.category).label,
       e.label,
-      PAY_METHODS[e.method],
+      e.method ? PAY_METHODS[e.method] : "Booking cost",
       (e.type === "in" ? e.amount : -e.amount).toFixed(2),
       e.by ?? "",
     ]),

@@ -54,6 +54,7 @@ export const MONEY_OUT_CATEGORIES = [
   { id: "transport", label: "Fuel, transport & parking", icon: "local_gas_station" },
   { id: "designer", label: "Designer", icon: "brush" },
   { id: "crew", label: "Crew pay", icon: "groups" },
+  { id: "guestbook", label: "Guestbook", icon: "menu_book" },
   { id: "equipment", label: "Equipment", icon: "photo_camera" },
   { id: "props", label: "Props & backdrop", icon: "celebration" },
   { id: "marketing", label: "Marketing & ads", icon: "campaign" },

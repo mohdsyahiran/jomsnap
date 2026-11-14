@@ -183,7 +183,16 @@ export function Dashboard({ user }: { user: string }) {
 
         {tab === "overview" && <Overview onNewBooking={newBooking} onGoto={goto} onPay={pay} />}
         {tab === "bookings" && <Bookings onNew={newBooking} onEdit={editBooking} onSetup={setSetupFor} onPay={pay} onInvoice={setInvoiceFor} />}
-        {tab === "money" && <Money onAdd={(type) => setMoneyModal({ open: true, type })} onOpenPayment={(id) => pay(id)} />}
+        {tab === "money" && (
+          <Money
+            onAdd={(type) => setMoneyModal({ open: true, type })}
+            onOpenPayment={(id) => pay(id)}
+            onOpenBooking={(id) => {
+              const b = data.bookings.find((x) => x.id === id);
+              if (b) editBooking(b);
+            }}
+          />
+        )}
         {tab === "calendar" && <Calendar onEdit={team ? setDetailsFor : editBooking} />}
         {tab === "reminders" && <Reminders />}
         {tab === "payments" && <Payments onPay={pay} onInvoice={setInvoiceFor} />}

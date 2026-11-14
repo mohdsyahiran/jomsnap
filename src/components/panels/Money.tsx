@@ -15,7 +15,15 @@ const inPeriod = (date: string, p: Period) => {
 };
 const sumOf = (xs: LedgerEntry[], type: "in" | "out") => xs.reduce((s, e) => s + (e.type === type ? e.amount : 0), 0);
 
-export function Money({ onAdd, onOpenPayment }: { onAdd: (t: "in" | "out") => void; onOpenPayment: (bookingId: string) => void }) {
+export function Money({
+  onAdd,
+  onOpenPayment,
+  onOpenBooking,
+}: {
+  onAdd: (t: "in" | "out") => void;
+  onOpenPayment: (bookingId: string) => void;
+  onOpenBooking: (bookingId: string) => void;
+}) {
   const { data, dispatch } = useStore();
   const [period, setPeriod] = useState<Period>(() => {
     const n = new Date();
@@ -42,6 +50,7 @@ export function Money({ onAdd, onOpenPayment }: { onAdd: (t: "in" | "out") => vo
 
   const remove = (e: LedgerEntry) => {
     if (e.source.kind === "payment") return onOpenPayment(e.source.bookingId);
+    if (e.source.kind === "cost") return onOpenBooking(e.source.bookingId);
     if (confirm(`Delete "${e.label}" (${formatRM2(e.amount)})?`)) dispatch({ type: "deleteTxn", id: e.source.id });
   };
 
@@ -51,7 +60,7 @@ export function Money({ onAdd, onOpenPayment }: { onAdd: (t: "in" | "out") => vo
         icon="account_balance"
         iconClass="bg-tertiary-fixed text-on-tertiary-fixed"
         title="Money In & Out"
-        subtitle="Booking payments are counted automatically. Add expenses like supplies, fuel and crew pay here."
+        subtitle="Booking payments and booking costs are counted automatically. Add other expenses here, like supplies and instalments."
       >
         <Button icon="download" onClick={() => exportLedgerCSV(inP, `jomsnap-money-${label.replace(/\s+/g, "-").toLowerCase()}.csv`)} disabled={!inP.length}>
           Export CSV
@@ -161,7 +170,7 @@ export function Money({ onAdd, onOpenPayment }: { onAdd: (t: "in" | "out") => vo
                   <div className="flex-1 min-w-0">
                     <p className="text-body-md font-medium text-on-surface truncate">{e.label}</p>
                     <p className="text-label-md text-outline truncate">
-                      {formatDate(e.date, { day: "numeric", month: "short" })} · {c.label} · {PAY_METHODS[e.method]}
+                      {formatDate(e.date, { day: "numeric", month: "short" })} · {c.label} · {e.method ? PAY_METHODS[e.method] : "Booking cost"}
                       {e.by && ` · by ${e.by}`}
                     </p>
                   </div>
@@ -172,11 +181,11 @@ export function Money({ onAdd, onOpenPayment }: { onAdd: (t: "in" | "out") => vo
                   <button
                     type="button"
                     onClick={() => remove(e)}
-                    title={e.source.kind === "payment" ? "Open booking payments" : "Delete"}
-                    aria-label={e.source.kind === "payment" ? "Open booking payments" : "Delete"}
+                    title={e.source.kind === "payment" ? "Open booking payments" : e.source.kind === "cost" ? "Open booking costs" : "Delete"}
+                    aria-label={e.source.kind === "payment" ? "Open booking payments" : e.source.kind === "cost" ? "Open booking costs" : "Delete"}
                     className="w-8 h-8 inline-flex items-center justify-center rounded-lg text-outline hover:bg-surface-container-high hover:text-on-surface"
                   >
-                    <Icon name={e.source.kind === "payment" ? "open_in_new" : "delete"} className="text-base" />
+                    <Icon name={e.source.kind === "txn" ? "delete" : "open_in_new"} className="text-base" />
                   </button>
                 </li>
               );
