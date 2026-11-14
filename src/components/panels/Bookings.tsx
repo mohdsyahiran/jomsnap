@@ -193,6 +193,11 @@ export function Bookings({ onNew, onEdit, onSetup, onPay, onInvoice }: { onNew: 
                         Payment
                       </Button>
                     )}
+                    {bal === 0 && b.payments.length > 0 && b.status !== "cancelled" && (
+                      <Button icon="receipt" onClick={() => onPay(b.id)} title="See or correct the payments">
+                        Payments
+                      </Button>
+                    )}
                     {canInvoice(b) && (
                       <Button icon="receipt_long" onClick={() => onInvoice(b)}>
                         {b.invoiceNo ? "Invoice" : "Create invoice"}

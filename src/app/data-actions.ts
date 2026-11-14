@@ -40,6 +40,7 @@ const ACTION_TYPES = new Set<Action["type"]>([
   "setStatus",
   "addPayment",
   "deletePayment",
+  "updatePayment",
   "recordSupplies",
   "adjustStock",
   "addTxn",
@@ -113,6 +114,8 @@ function validate(a: Action): string | null {
   if (a.type === "setGuestbook" && (!["pending", "ordered", "received"].includes(a.status) || (a.cost !== undefined && !isMoney(a.cost)))) return "Invalid guestbook update";
   if (a.type === "setPrep" && !(["guestbook", "design", "backdrop"].includes(a.item) && typeof a.done === "boolean")) return "Invalid reminder update";
   if (a.type === "addPayment" && !(isMoney(a.payment?.amount) && a.payment.amount > 0)) return "Invalid amount";
+  if (a.type === "updatePayment" && !(isMoney(a.amount) && a.amount > 0 && (a.note === undefined || (typeof a.note === "string" && a.note.length <= 60))))
+    return "Invalid payment";
   if (a.type === "addTxn" && !(isMoney(a.txn?.amount) && a.txn.amount > 0 && (a.txn.type === "in" || a.txn.type === "out"))) return "Invalid amount";
   if (
     a.type === "addUnavailable" &&

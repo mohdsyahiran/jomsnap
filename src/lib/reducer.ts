@@ -15,6 +15,7 @@ export type Action =
   | { type: "setStatus"; id: string; status: Booking["status"] }
   | { type: "addPayment"; bookingId: string; payment: Omit<Payment, "id"> }
   | { type: "deletePayment"; bookingId: string; paymentId: string }
+  | { type: "updatePayment"; bookingId: string; paymentId: string; amount: number; note?: string }
   | { type: "recordSupplies"; id: string }
   | { type: "adjustStock"; id: string; delta: number; cost?: number }
   | { type: "addTxn"; txn: Omit<Transaction, "id" | "createdAt" | "by"> }
@@ -126,6 +127,22 @@ export function reducer(data: AdminData, action: Stamped): AdminData {
         ...data,
         bookings: data.bookings.map((x) => (x.id === b.id ? { ...x, payments: x.payments.filter((y) => y.id !== p.id) } : x)),
         audit: log(data, "payment", `Removed payment ${formatRM(p.amount)} from ${b.client}`),
+      };
+    }
+
+    case "updatePayment": {
+      const b = data.bookings.find((x) => x.id === action.bookingId);
+      const p = b?.payments.find((x) => x.id === action.paymentId);
+      if (!b || !p) return data;
+      const updated = { ...p, amount: action.amount, note: action.note };
+      return {
+        ...data,
+        bookings: data.bookings.map((x) => (x.id === b.id ? { ...x, payments: x.payments.map((y) => (y.id === p.id ? updated : y)) } : x)),
+        audit: log(
+          data,
+          "payment",
+          `Updated payment from ${b.client}: ${formatRM(p.amount)}${p.note ? ` ${p.note}` : ""} → ${formatRM(updated.amount)}${updated.note ? ` ${updated.note}` : ""}`,
+        ),
       };
     }
 

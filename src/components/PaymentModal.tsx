@@ -80,23 +80,7 @@ function PaymentForm({ initialId, onDone }: { initialId: string | null; onDone: 
           {booking.payments.length > 0 && (
             <ul className="mt-2 pt-2 border-t border-outline-variant/40 space-y-1">
               {booking.payments.map((p) => (
-                <li key={p.id} className="flex items-center justify-between gap-2 text-label-md">
-                  <span className="text-on-surface-variant">
-                    {formatDate(p.date)} · {PAY_METHODS[p.method]}
-                    {p.note ? ` · ${p.note}` : ""}
-                  </span>
-                  <span className="flex items-center gap-1 tabular-nums">
-                    {formatRM2(p.amount)}
-                    <button
-                      type="button"
-                      aria-label="Remove payment"
-                      className="p-0.5 rounded hover:bg-error-container text-outline hover:text-on-error-container"
-                      onClick={() => confirm(`Remove payment of ${formatRM2(p.amount)}?`) && dispatch({ type: "deletePayment", bookingId: booking.id, paymentId: p.id })}
-                    >
-                      <Icon name="delete" className="text-sm" />
-                    </button>
-                  </span>
-                </li>
+                <PaymentRow key={p.id} bookingId={booking.id} payment={p} />
               ))}
             </ul>
           )}
@@ -136,5 +120,82 @@ function PaymentForm({ initialId, onDone }: { initialId: string | null; onDone: 
         </Button>
       </div>
     </form>
+  );
+}
+
+/** A recorded payment; its amount and Pay Depo / Pay Full note can be corrected in place */
+function PaymentRow({ bookingId, payment: p }: { bookingId: string; payment: Payment }) {
+  const { dispatch } = useStore();
+  const [editing, setEditing] = useState(false);
+  const [amount, setAmount] = useState(p.amount);
+  const [note, setNote] = useState(p.note ?? "");
+  // Older payments may carry a typed note; keep it selectable
+  const notes = p.note && !(NOTES as readonly string[]).includes(p.note) ? [...NOTES, p.note] : NOTES;
+
+  const save = async () => {
+    if (!(amount > 0)) return;
+    if (await dispatch({ type: "updatePayment", bookingId, paymentId: p.id, amount, note: note || undefined })) setEditing(false);
+  };
+
+  if (editing)
+    return (
+      <li className="grid grid-cols-[minmax(0,1fr)_6.5rem_auto] items-center gap-1.5 py-1">
+        <select className={`${inputClass} py-1.5`} value={note} onChange={(e) => setNote(e.target.value)} aria-label="Payment note">
+          {notes.map((n) => (
+            <option key={n} value={n}>
+              {n}
+            </option>
+          ))}
+        </select>
+        <input
+          type="number"
+          min={1}
+          step="0.01"
+          className={`${inputClass} py-1.5 text-right tabular-nums`}
+          value={amount}
+          onChange={(e) => setAmount(Number(e.target.value))}
+          aria-label="Payment amount"
+        />
+        <span className="flex items-center">
+          <button type="button" aria-label="Save payment" className="p-1 rounded hover:bg-tertiary-fixed text-tertiary" onClick={save}>
+            <Icon name="check" className="text-lg" />
+          </button>
+          <button
+            type="button"
+            aria-label="Cancel"
+            className="p-1 rounded hover:bg-surface-container-high text-outline"
+            onClick={() => {
+              setAmount(p.amount);
+              setNote(p.note ?? "");
+              setEditing(false);
+            }}
+          >
+            <Icon name="close" className="text-lg" />
+          </button>
+        </span>
+      </li>
+    );
+
+  return (
+    <li className="flex items-center justify-between gap-2 text-label-md">
+      <span className="text-on-surface-variant">
+        {formatDate(p.date)} · {PAY_METHODS[p.method]}
+        {p.note ? ` · ${p.note}` : ""}
+      </span>
+      <span className="flex items-center gap-1 tabular-nums">
+        {formatRM2(p.amount)}
+        <button type="button" aria-label="Edit payment" className="p-0.5 rounded hover:bg-surface-container-high text-outline hover:text-on-surface" onClick={() => setEditing(true)}>
+          <Icon name="edit" className="text-sm" />
+        </button>
+        <button
+          type="button"
+          aria-label="Remove payment"
+          className="p-0.5 rounded hover:bg-error-container text-outline hover:text-on-error-container"
+          onClick={() => confirm(`Remove payment of ${formatRM2(p.amount)}?`) && dispatch({ type: "deletePayment", bookingId, paymentId: p.id })}
+        >
+          <Icon name="delete" className="text-sm" />
+        </button>
+      </span>
+    </li>
   );
 }
