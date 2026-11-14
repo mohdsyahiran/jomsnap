@@ -20,7 +20,7 @@ export type Action =
   | { type: "adjustStock"; id: string; delta: number; cost?: number }
   | { type: "addTxn"; txn: Omit<Transaction, "id" | "createdAt" | "by"> }
   | { type: "deleteTxn"; id: string }
-  | { type: "setGuestbook"; id: string; status: GuestbookStatus; cost?: number }
+  | { type: "setGuestbook"; id: string; status: GuestbookStatus }
   | { type: "issueInvoice"; id: string; invoiceNo: string }
   | { type: "addUnavailable"; entry: Pick<Unavailability, "team" | "from" | "to" | "note"> }
   | { type: "deleteUnavailable"; id: string }
@@ -210,29 +210,10 @@ export function reducer(data: AdminData, action: Stamped): AdminData {
         orderedAt: action.status === "pending" ? undefined : (b.guestbook.orderedAt ?? today),
         receivedAt: action.status === "received" ? today : undefined,
       };
-      // Ordering with a cost is also money out
-      const expense: Transaction[] =
-        action.status === "ordered" && action.cost
-          ? [
-              {
-                id: uid(),
-                type: "out",
-                amount: action.cost,
-                date: today,
-                category: "supplies",
-                method: "transfer",
-                note: `Guestbook for #${b.code} ${b.client}`,
-                bookingId: b.id,
-                by: action.by,
-                createdAt: new Date().toISOString(),
-              },
-            ]
-          : [];
       return {
         ...data,
         bookings: data.bookings.map((x) => (x.id === b.id ? { ...x, guestbook } : x)),
-        transactions: [...data.transactions, ...expense],
-        audit: log(data, "stock", `Guestbook #${b.code} ${b.client} → ${action.status}${action.cost ? ` · ${formatRM(action.cost)}` : ""}`, b.team),
+        audit: log(data, "stock", `Guestbook #${b.code} ${b.client} → ${action.status}`, b.team),
       };
     }
 

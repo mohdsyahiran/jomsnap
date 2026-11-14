@@ -112,7 +112,7 @@ function validate(a: Action): string | null {
   )
     return "Invalid costs";
   if (a.type === "issueInvoice" && !/^[A-Za-z0-9/-]{1,30}$/.test(a.invoiceNo?.trim() ?? "")) return "Invoice number can only use letters, numbers, - and /";
-  if (a.type === "setGuestbook" && (!["pending", "ordered", "received"].includes(a.status) || (a.cost !== undefined && !isMoney(a.cost)))) return "Invalid guestbook update";
+  if (a.type === "setGuestbook" && !["pending", "ordered", "received"].includes(a.status)) return "Invalid guestbook update";
   if (a.type === "setPrep" && !(["guestbook", "design", "backdrop"].includes(a.item) && typeof a.done === "boolean")) return "Invalid reminder update";
   if (a.type === "addPayment" && !(isMoney(a.payment?.amount) && a.payment.amount > 0)) return "Invalid amount";
   if (a.type === "updatePayment" && !(isMoney(a.amount) && a.amount > 0 && (a.note === undefined || (typeof a.note === "string" && a.note.length <= 60))))

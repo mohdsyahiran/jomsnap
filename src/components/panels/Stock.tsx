@@ -287,11 +287,10 @@ function GuestbookOrders({ today, onOrder }: { today: string; onOrder: (b: Booki
 }
 
 function OrderForm({ booking, onDone }: { booking: Booking; onDone: () => void }) {
-  const { dispatch, team } = useStore();
-  const [cost, setCost] = useState<number | "">("");
+  const { dispatch } = useStore();
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
-    dispatch({ type: "setGuestbook", id: booking.id, status: "ordered", cost: cost ? Number(cost) : undefined });
+    dispatch({ type: "setGuestbook", id: booking.id, status: "ordered" });
     onDone();
   };
   return (
@@ -303,21 +302,7 @@ function OrderForm({ booking, onDone }: { booking: Booking; onDone: () => void }
         </strong>{" "}
         on {formatDate(booking.date)}.
       </p>
-      <Field label="Cost RM (optional)">
-        <input
-          type="number"
-          min={0}
-          step="0.01"
-          inputMode="decimal"
-          className={inputClass}
-          value={cost}
-          onChange={(e) => setCost(e.target.value === "" ? "" : Number(e.target.value))}
-          autoFocus
-        />
-      </Field>
-      <p className="text-label-md text-outline">
-        {team ? "With a cost, admin sees it as a supplies expense." : <>With a cost, it&apos;s also recorded under Money In &amp; Out as a supplies expense.</>}
-      </p>
+      <p className="text-label-md text-outline">Its cost goes in the booking&apos;s Our costs (Guestbook), so it isn&apos;t asked for here.</p>
       <div className="flex justify-end gap-2 pt-1">
         <Button variant="ghost" onClick={onDone}>
           Cancel
