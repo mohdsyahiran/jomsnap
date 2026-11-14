@@ -56,6 +56,8 @@ export const MONEY_OUT_CATEGORIES = [
   { id: "crew", label: "Crew pay", icon: "groups" },
   { id: "guestbook", label: "Guestbook", icon: "menu_book" },
   { id: "equipment", label: "Equipment", icon: "photo_camera" },
+  // Paying an owner back for an item already on the ROI investment list
+  { id: "investment-repay", label: "Investment paid back to owner", icon: "currency_exchange" },
   { id: "props", label: "Props & backdrop", icon: "celebration" },
   { id: "marketing", label: "Marketing & ads", icon: "campaign" },
   { id: "maintenance", label: "Repair & maintenance", icon: "build" },

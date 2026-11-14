@@ -11,8 +11,8 @@ import { Button, Card, Empty, Field, Icon, inputClass, Modal, PanelHeader } from
 
 // Money out under these also counts as investment, so equipment logged in Money In & Out isn't lost
 const INVESTMENT_CATEGORIES = ["equipment"];
-// Instalments pay for investments already counted in full, so they aren't running costs either
-const NOT_RUNNING = [...INVESTMENT_CATEGORIES, INSTALMENT_CATEGORY];
+// Instalments and owner pay-backs are for investments already counted in full, so they aren't running costs either
+const NOT_RUNNING = [...INVESTMENT_CATEGORIES, INSTALMENT_CATEGORY, "investment-repay"];
 // Owner capital is money put in, not money earned
 const NOT_REVENUE = ["capital"];
 const PLAN_MONTHS = [12, 6];
