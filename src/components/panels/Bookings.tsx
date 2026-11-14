@@ -130,7 +130,8 @@ export function Bookings({ onNew, onEdit, onSetup, onPay, onInvoice }: { onNew: 
                         ) : (
                           b.status !== "cancelled" && <Pill className="bg-error-container text-on-error-container">No team</Pill>
                         )}
-                        {b.guestbook && b.status !== "cancelled" && <Pill className={GUESTBOOK_STYLE[b.guestbook.status].className}>{GUESTBOOK_STYLE[b.guestbook.status].label}</Pill>}
+                        {/* Not-ordered guestbooks are chased from Reminders and Stock, so only show progress here */}
+                        {b.guestbook && b.guestbook.status !== "pending" && b.status !== "cancelled" && <Pill className={GUESTBOOK_STYLE[b.guestbook.status].className}>{GUESTBOOK_STYLE[b.guestbook.status].label}</Pill>}
                         <span className="text-label-md text-outline">#{b.code}</span>
                       </div>
                       <p className="text-body-sm text-on-surface-variant truncate">
