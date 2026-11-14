@@ -16,6 +16,12 @@ export type Payment = {
 
 export type Extra = { label: string; amount: number };
 
+/** What an event costs us to run; internal only, never on invoices or team screens */
+export type CostKey = "crew" | "designer" | "transport" | "other";
+
+/** `note` says what an "other" cost was, e.g. "Parking" */
+export type Cost = { type: CostKey; amount: number; note?: string };
+
 export type PayMethod = "transfer" | "cash" | "duitnow" | "other" | "paylater";
 
 export type Booking = {
@@ -47,6 +53,8 @@ export type Booking = {
   prep?: Partial<Record<"design" | "backdrop", string>>;
   /** Charges on top of the package, e.g. transportation */
   extras?: Extra[];
+  /** Our own costs for this event, to see its nett profit */
+  costs?: Cost[];
   /** Set the first time an invoice is issued, e.g. "JS-2026-001" */
   invoiceNo?: string;
   invoiceDate?: string; // YYYY-MM-DD

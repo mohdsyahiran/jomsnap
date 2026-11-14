@@ -2,7 +2,7 @@
 
 import { cookies } from "next/headers";
 import { loadSnapshot, saveSnapshot, type Snapshot } from "@/lib/db";
-import { INVEST_METHODS, PARTNERS, STATUSES, TEAMS } from "@/lib/constants";
+import { COST_ITEMS, INVEST_METHODS, PARTNERS, STATUSES, TEAMS } from "@/lib/constants";
 import { safeUrl } from "@/lib/format";
 import { isAdminData, normalize, reducer, type Action, type InvestmentEntry } from "@/lib/reducer";
 import { scopeSnapshot } from "@/lib/scope";
@@ -99,6 +99,16 @@ function validate(a: Action): string | null {
     !(Array.isArray(a.booking.extras) && a.booking.extras.length <= 10 && a.booking.extras.every((e) => typeof e?.label === "string" && e.label.trim() && isMoney(e.amount)))
   )
     return "Invalid extra charges";
+  if (
+    a.type === "saveBooking" &&
+    a.booking.costs !== undefined &&
+    !(
+      Array.isArray(a.booking.costs) &&
+      a.booking.costs.length <= 20 &&
+      a.booking.costs.every((c) => COST_ITEMS.some((x) => x.id === c?.type) && isMoney(c.amount) && c.amount > 0 && (c.note === undefined || (typeof c.note === "string" && c.note.length <= 60)))
+    )
+  )
+    return "Invalid costs";
   if (a.type === "issueInvoice" && !/^[A-Za-z0-9/-]{1,30}$/.test(a.invoiceNo?.trim() ?? "")) return "Invoice number can only use letters, numbers, - and /";
   if (a.type === "setGuestbook" && (!["pending", "ordered", "received"].includes(a.status) || (a.cost !== undefined && !isMoney(a.cost)))) return "Invalid guestbook update";
   if (a.type === "setPrep" && !(["guestbook", "design", "backdrop"].includes(a.item) && typeof a.done === "boolean")) return "Invalid reminder update";

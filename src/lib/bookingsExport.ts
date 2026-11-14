@@ -1,6 +1,6 @@
-import { GUESTBOOK_STYLE, PACKAGES, PAY_METHODS, STATUS_STYLE } from "./constants";
+import { COST_ITEMS, GUESTBOOK_STYLE, PACKAGES, PAY_METHODS, STATUS_STYLE } from "./constants";
 import { download } from "./download";
-import { balanceOf, paidOf, totalOf } from "./format";
+import { balanceOf, costLabel, costOf, nettOf, paidOf, totalOf } from "./format";
 import type { Booking } from "./types";
 
 /** Text a spreadsheet would otherwise read as a formula (e.g. a name starting with "=") gets a leading apostrophe */
@@ -36,6 +36,10 @@ export function exportBookingsCSV(bookings: Booking[], filename: string) {
       "Balance (RM)",
       "Payment",
       "Payments",
+      ...COST_ITEMS.map((c) => `${c.label} cost (RM)`),
+      "Cost details",
+      "Total costs (RM)",
+      "Nett profit (RM)",
       "Status",
       "Guestbook",
       "Backdrop",
@@ -62,6 +66,13 @@ export function exportBookingsCSV(bookings: Booking[], filename: string) {
       rm(balanceOf(b)),
       paymentStatus(b),
       text(b.payments.map((p) => `${p.date} RM${rm(p.amount)} ${PAY_METHODS[p.method]}${p.note ? ` (${p.note})` : ""}`).join("; ")),
+      ...COST_ITEMS.map((c) => {
+        const sum = (b.costs ?? []).filter((x) => x.type === c.id).reduce((s, x) => s + x.amount, 0);
+        return sum ? rm(sum) : "";
+      }),
+      text((b.costs ?? []).map((c) => costLabel(c, COST_ITEMS)).join("; ")),
+      rm(costOf(b)),
+      rm(nettOf(b)),
       STATUS_STYLE[b.status].label,
       b.guestbook ? GUESTBOOK_STYLE[b.guestbook.status].label.replace("Guestbook: ", "") : "",
       text(b.backdrop ?? ""),

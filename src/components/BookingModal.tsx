@@ -1,10 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { GUESTBOOK_LEAD_DAYS, PACKAGES, STATUS_STYLE, STATUSES, TEAMS } from "@/lib/constants";
-import { toISODate } from "@/lib/format";
+import { COST_ITEMS, GUESTBOOK_LEAD_DAYS, PACKAGES, STATUS_STYLE, STATUSES, TEAMS } from "@/lib/constants";
+import { formatRM2, toISODate } from "@/lib/format";
 import { useStore } from "@/lib/store";
-import type { Booking, BookingStatus, PackageId, Team } from "@/lib/types";
+import type { Booking, BookingStatus, Cost, CostKey, PackageId, Team } from "@/lib/types";
 import { Button, Field, Icon, inputClass, Modal } from "./ui";
 
 const EVENT_TYPES: Booking["eventType"][] = ["Wedding", "Engagement", "Corporate", "Birthday", "Other"];
@@ -66,6 +66,7 @@ function BookingForm({ booking, onDone }: { booking: Booking | null; onDone: () 
     notes: booking?.notes ?? "",
     backdrop: booking?.backdrop ?? "",
     extras: booking?.extras ?? [],
+    costs: (booking?.costs ?? []) as Cost[],
     designUrl: booking?.designUrl ?? "",
     guestbook: booking ? !!booking.guestbook : PACKAGES.standard.guestbook,
   }));
@@ -83,14 +84,21 @@ function BookingForm({ booking, onDone }: { booking: Booking | null; onDone: () 
     }));
   };
 
+  const total = Number(f.price) + f.extras.reduce((sum, x) => sum + (Number(x.amount) || 0), 0);
+  const costTotal = f.costs.reduce((sum, c) => sum + (Number(c.amount) || 0), 0);
+
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
     const { guestbook, status, team, ...fields } = f;
+    // An empty list (not undefined) so removing every cost actually clears them
+    const costs = f.costs
+      .filter((c) => Number(c.amount) > 0)
+      .map((c) => ({ type: c.type, amount: Number(c.amount), ...(c.type === "other" && c.note?.trim() ? { note: c.note.trim() } : {}) }));
     if (!status || !team) return;
     dispatch({
       type: "saveBooking",
       guestbookNeeded: guestbook,
-      booking: { ...fields, status, team, id: booking?.id, client: f.client.trim(), venue: f.venue.trim(), price: Number(f.price) || 0, phone: f.phone.trim() || undefined, notes: f.notes.trim() || undefined, backdrop: fields.backdrop.trim() || undefined, designUrl: fields.designUrl.trim() || undefined, extras: fields.extras.filter((x) => x.label.trim() && x.amount > 0).map((x) => ({ label: x.label.trim(), amount: Number(x.amount) })) },
+      booking: { ...fields, status, team, id: booking?.id, client: f.client.trim(), venue: f.venue.trim(), price: Number(f.price) || 0, phone: f.phone.trim() || undefined, notes: f.notes.trim() || undefined, backdrop: fields.backdrop.trim() || undefined, designUrl: fields.designUrl.trim() || undefined, extras: fields.extras.filter((x) => x.label.trim() && x.amount > 0).map((x) => ({ label: x.label.trim(), amount: Number(x.amount) })), costs },
     });
     onDone();
   };
@@ -217,9 +225,86 @@ function BookingForm({ booking, onDone }: { booking: Booking | null; onDone: () 
         <div className="mt-3 pt-2 border-t border-outline-variant/50 flex items-center justify-between text-body-md">
           <span className="font-semibold text-on-surface">Total</span>
           <span className="font-bold tabular-nums text-primary">
-            RM {(Number(f.price) + f.extras.reduce((sum, x) => sum + (Number(x.amount) || 0), 0)).toLocaleString("en-MY", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            RM {total.toLocaleString("en-MY", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </span>
         </div>
+      </fieldset>
+      <fieldset className="col-span-2 rounded-xl border border-dashed border-outline-variant px-3 pb-3 pt-1 sm:px-4 bg-surface-container-low/60">
+        <legend className="px-1 text-label-md font-semibold text-on-surface-variant flex items-center gap-1">
+          <Icon name="lock" className="text-sm" />
+          Our costs · internal only
+        </legend>
+        {f.costs.length === 0 ? (
+          <p className="text-body-sm text-on-surface-variant">No costs yet. Add only the ones this event has.</p>
+        ) : (
+          <div className="space-y-2">
+            {f.costs.map((c, i) => (
+              <div key={i} className={PRICE_ROW}>
+                {/* "Others" is typed in as what it was; the rest are picked from the list */}
+                {c.type === "other" ? (
+                  <input
+                    className={inputClass}
+                    maxLength={60}
+                    value={c.note ?? ""}
+                    placeholder="Others, e.g. Parking"
+                    aria-label="What the other cost was"
+                    onChange={(e) => set("costs", f.costs.map((y, j) => (j === i ? { ...y, note: e.target.value } : y)))}
+                    autoFocus={!c.note && !c.amount}
+                  />
+                ) : (
+                  <select
+                    className={inputClass}
+                    value={c.type}
+                    aria-label="Cost type"
+                    onChange={(e) => set("costs", f.costs.map((y, j) => (j === i ? { ...y, type: e.target.value as CostKey } : y)))}
+                  >
+                    {COST_ITEMS.map((x) => (
+                      <option key={x.id} value={x.id}>
+                        {x.label}
+                      </option>
+                    ))}
+                  </select>
+                )}
+                <MoneyInput value={c.amount} onChange={(v) => set("costs", f.costs.map((y, j) => (j === i ? { ...y, amount: v } : y)))} label="Cost amount" />
+                <button
+                  type="button"
+                  aria-label="Remove cost"
+                  className="h-9 w-9 inline-flex items-center justify-center rounded-lg text-outline hover:bg-error-container hover:text-on-error-container"
+                  onClick={() => set("costs", f.costs.filter((_, j) => j !== i))}
+                >
+                  <Icon name="delete" className="text-lg" />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+        <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1">
+          {COST_ITEMS.map((x) => (
+            <button
+              key={x.id}
+              type="button"
+              className="inline-flex items-center gap-1 text-label-md font-semibold text-secondary hover:underline"
+              onClick={() => set("costs", [...f.costs, { type: x.id, amount: 0 }])}
+            >
+              <Icon name="add" className="text-base" />
+              {x.label}
+            </button>
+          ))}
+        </div>
+        <div className="mt-3 pt-2 border-t border-outline-variant/50 space-y-1 text-body-sm">
+          <div className="flex items-center justify-between">
+            <span className="text-on-surface-variant">Total costs</span>
+            <span className="tabular-nums">{formatRM2(costTotal)}</span>
+          </div>
+          <div className="flex items-center justify-between text-body-md">
+            <span className="font-semibold text-on-surface">Nett profit</span>
+            <span className={`font-bold tabular-nums ${total - costTotal >= 0 ? "text-tertiary" : "text-error"}`}>
+              {total - costTotal < 0 ? "−" : ""}
+              {formatRM2(Math.abs(total - costTotal))}
+            </span>
+          </div>
+        </div>
+        <p className="mt-2 text-label-md text-outline">Not shown on invoices or to team logins.</p>
       </fieldset>
       <Field label="Backdrop">
         <input className={inputClass} value={f.backdrop} onChange={(e) => set("backdrop", e.target.value)} placeholder="e.g. Floral white" />

@@ -1,4 +1,4 @@
-import type { Booking } from "./types";
+import type { Booking, Cost } from "./types";
 
 const rm = new Intl.NumberFormat("en-MY", { style: "currency", currency: "MYR", maximumFractionDigits: 0 });
 const rm2 = new Intl.NumberFormat("en-MY", { style: "currency", currency: "MYR", minimumFractionDigits: 2 });
@@ -30,6 +30,12 @@ export function formatTime(t: string) {
 
 /** Package price plus extra charges (e.g. transportation) */
 export const totalOf = (b: Booking) => b.price + (b.extras ?? []).reduce((s, e) => s + e.amount, 0);
+/** Our own costs for the event; nett profit is what's left of the total after them */
+export const costOf = (b: Booking) => (b.costs ?? []).reduce((s, c) => s + c.amount, 0);
+/** "Crew RM 80" or, for others, "Parking RM 10" */
+export const costLabel = (c: Cost, labels: { id: string; label: string }[]) =>
+  `${(c.type === "other" && c.note) || labels.find((x) => x.id === c.type)?.label || c.type} ${formatRM(c.amount)}`;
+export const nettOf = (b: Booking) => totalOf(b) - costOf(b);
 export const paidOf = (b: Booking) => b.payments.reduce((s, p) => s + p.amount, 0);
 export const balanceOf = (b: Booking) => (b.status === "cancelled" ? 0 : Math.max(0, totalOf(b) - paidOf(b)));
 

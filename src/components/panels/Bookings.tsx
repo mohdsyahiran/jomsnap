@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { GUESTBOOK_STYLE, PACKAGES, STATUS_STYLE, TEAMS } from "@/lib/constants";
-import { balanceOf, formatRM, formatTime, parseDate, safeUrl, toISODate, totalOf, whatsappLink } from "@/lib/format";
+import { COST_ITEMS, GUESTBOOK_STYLE, PACKAGES, STATUS_STYLE, TEAMS } from "@/lib/constants";
+import { balanceOf, costLabel, costOf, formatRM, formatTime, nettOf, parseDate, safeUrl, toISODate, totalOf, whatsappLink } from "@/lib/format";
 import { exportBookingsCSV } from "@/lib/bookingsExport";
 import { exportICS } from "@/lib/ics";
 import { canInvoice } from "@/lib/invoice";
@@ -142,6 +142,21 @@ export function Bookings({ onNew, onEdit, onSetup, onPay, onInvoice }: { onNew: 
                         {bal > 0 && <span className="text-secondary font-semibold"> · balance {formatRM(bal)}</span>}
                         {b.suppliesDeducted && <span className="text-tertiary"> · supplies recorded</span>}
                       </p>
+                      {b.status !== "cancelled" &&
+                        (costOf(b) > 0 ? (
+                          <p className="text-label-md mt-0.5">
+                            <span className="text-on-surface-variant">
+                              Costs {formatRM(costOf(b))} ({(b.costs ?? []).map((c) => costLabel(c, COST_ITEMS)).join(", ")})
+                            </span>
+                            <span className={`font-semibold ${nettOf(b) >= 0 ? "text-tertiary" : "text-error"}`}>
+                              {" "}
+                              · Nett {nettOf(b) < 0 ? "−" : ""}
+                              {formatRM(Math.abs(nettOf(b)))}
+                            </span>
+                          </p>
+                        ) : (
+                          b.status === "completed" && <p className="text-label-md text-outline mt-0.5">Costs not added yet</p>
+                        ))}
                       {(b.backdrop || design) && (
                         <p className="text-label-md text-on-surface-variant mt-1 flex flex-wrap items-center gap-x-3 gap-y-1">
                           {b.backdrop && (

@@ -1,4 +1,4 @@
-import type { BookingStatus, GuestbookStatus, InvestMethod, PackageId, Partner, PayMethod, Team } from "./types";
+import type { BookingStatus, CostKey, GuestbookStatus, InvestMethod, PackageId, Partner, PayMethod, Team } from "./types";
 
 // Mirrors the packages section on the public site (index.html)
 export const PACKAGES: Record<PackageId, { label: string; hours: number; price: number; guestbook: boolean }> = {
@@ -7,6 +7,13 @@ export const PACKAGES: Record<PackageId, { label: string; hours: number; price: 
   premium: { label: "Premium · 4 Hours", hours: 4, price: 790, guestbook: true },
   custom: { label: "Custom", hours: 0, price: 0, guestbook: false },
 };
+
+export const COST_ITEMS: { id: CostKey; label: string }[] = [
+  { id: "crew", label: "Crew" },
+  { id: "designer", label: "Designer" },
+  { id: "transport", label: "Transportation" },
+  { id: "other", label: "Others" },
+];
 
 /** Statuses offered when saving a booking */
 export const STATUSES = ["confirmed", "completed", "cancelled"] as const satisfies readonly BookingStatus[];
