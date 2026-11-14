@@ -17,7 +17,7 @@ export type Payment = {
 export type Extra = { label: string; amount: number };
 
 /** What an event costs us to run; internal only, never on invoices or team screens */
-export type CostKey = "crew" | "designer" | "transport" | "other";
+export type CostKey = "crew" | "designer" | "transport" | "guestbook" | "other";
 
 /** `note` says what an "other" cost was, e.g. "Parking" */
 export type Cost = { type: CostKey; amount: number; note?: string };

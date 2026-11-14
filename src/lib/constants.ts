@@ -12,6 +12,7 @@ export const COST_ITEMS: { id: CostKey; label: string }[] = [
   { id: "crew", label: "Crew" },
   { id: "designer", label: "Designer" },
   { id: "transport", label: "Transportation" },
+  { id: "guestbook", label: "Guestbook" },
   { id: "other", label: "Others" },
 ];
 
