@@ -3,13 +3,16 @@
 import { useState } from "react";
 import { INVEST_METHODS, PACKAGES, PARTNERS } from "@/lib/constants";
 import { formatDate, formatRM, formatRM2, toISODate } from "@/lib/format";
-import { buildLedger } from "@/lib/ledger";
+import { instalmentsOf } from "@/lib/instalments";
+import { buildLedger, INSTALMENT_CATEGORY } from "@/lib/ledger";
 import { useStore } from "@/lib/store";
 import type { InvestMethod, Investment, Partner } from "@/lib/types";
 import { Button, Card, Empty, Field, Icon, inputClass, Modal, PanelHeader } from "../ui";
 
 // Money out under these also counts as investment, so equipment logged in Money In & Out isn't lost
 const INVESTMENT_CATEGORIES = ["equipment"];
+// Instalments pay for investments already counted in full, so they aren't running costs either
+const NOT_RUNNING = [...INVESTMENT_CATEGORIES, INSTALMENT_CATEGORY];
 // Owner capital is money put in, not money earned
 const NOT_REVENUE = ["capital"];
 const PLAN_MONTHS = [12, 6];
@@ -20,21 +23,6 @@ function payerLabel(p: Investment["paidBy"]) {
   const parts = PARTNERS.filter((k) => p?.[k]);
   if (parts.length === 1) return parts[0];
   return parts.map((k) => `${k} ${formatRM2(p![k]!)}`).join(" · ");
-}
-
-/**
- * Instalments due so far, assuming one a month starting a month after the purchase date.
- * null for items paid in one go.
- */
-function instalmentsOf(i: Investment, today: string) {
-  if (!i.months || i.months < 2) return null;
-  const [y, m, d] = i.date.split("-").map(Number);
-  const [ty, tm, td] = today.split("-").map(Number);
-  const elapsed = (ty - y) * 12 + (tm - m) - (td < d ? 1 : 0);
-  const paid = Math.max(0, Math.min(i.months, elapsed));
-  const monthly = i.amount / i.months;
-  const left = paid === i.months ? 0 : Math.round((i.amount - monthly * paid) * 100) / 100;
-  return { paid, months: i.months, monthly, left };
 }
 
 const signed = (n: number) => `${n < 0 ? "−" : ""}${formatRM2(Math.abs(n))}`;
@@ -51,7 +39,7 @@ export function Roi() {
   const equipmentOut = sum((e) => e.type === "out" && INVESTMENT_CATEGORIES.includes(e.category));
   const investment = itemsTotal + equipmentOut;
   const revenue = sum((e) => e.type === "in" && !NOT_REVENUE.includes(e.category));
-  const runningCosts = sum((e) => e.type === "out" && !INVESTMENT_CATEGORIES.includes(e.category));
+  const runningCosts = sum((e) => e.type === "out" && !NOT_RUNNING.includes(e.category));
 
   const operatingProfit = revenue - runningCosts;
   const netProfit = operatingProfit - investment;
@@ -191,6 +179,7 @@ function InvestmentList({
                           <div className={`text-label-md ${plan.left ? "" : "text-tertiary font-semibold"}`}>
                             {plan.left ? `${plan.paid} of ${plan.months} paid · ${plan.months - plan.paid} left` : "Done"}
                           </div>
+                          {plan.settled > 0 && <div className="text-label-md text-tertiary">{formatRM2(plan.settled)} paid off early</div>}
                         </>
                       ) : (
                         "—"
@@ -371,6 +360,7 @@ function InvestmentForm({ existing, onDone }: { existing?: Investment; onDone: (
   const [date, setDate] = useState(() => existing?.date ?? toISODate(new Date()));
   const [method, setMethod] = useState<InvestMethod>(existing?.method ?? "cash");
   const [months, setMonths] = useState<number | "">(existing?.months ?? "");
+  const [settled, setSettled] = useState<number | "">(existing?.settled ?? "");
   const [payer, setPayer] = useState<PayerChoice | "">(() => (existing ? initialPayer(existing.paidBy) : "Syahiran"));
   // When split, Syahiran's share is entered and Mullah pays the rest
   const [share, setShare] = useState<number | "">(existing?.paidBy?.Syahiran ?? "");
@@ -384,7 +374,7 @@ function InvestmentForm({ existing, onDone }: { existing?: Investment; onDone: (
     e.preventDefault();
     if (!item.trim() || !amount || amount <= 0 || !payer || !splitOk) return;
     const paidBy = payer === "split" ? { Syahiran: Number(share), Mullah: rest } : { [payer]: total };
-    const entry = { item: item.trim(), amount: total, date, method, months: months && months > 1 ? months : undefined, paidBy, note: note.trim() || undefined };
+    const entry = { item: item.trim(), amount: total, date, method, months: months && months > 1 ? months : undefined, settled: months && months > 1 && settled && settled > 0 ? Number(settled) : undefined, paidBy, note: note.trim() || undefined };
     dispatch(existing ? { type: "updateInvestment", id: existing.id, entry } : { type: "addInvestment", entry });
     onDone();
   };
@@ -466,6 +456,21 @@ function InvestmentForm({ existing, onDone }: { existing?: Investment; onDone: (
           placeholder="e.g. 12"
         />
       </Field>
+      {months !== "" && months > 1 && (
+        <Field label="Already paid off (RM, optional)" className="col-span-2">
+          <input
+            type="number"
+            min={0}
+            max={total || undefined}
+            step="0.01"
+            inputMode="decimal"
+            className={inputClass}
+            value={settled}
+            onChange={(e) => setSettled(e.target.value === "" ? "" : Number(e.target.value))}
+            placeholder="e.g. 300 if one owner's share was paid in one go"
+          />
+        </Field>
+      )}
       <Field label="Notes" className="col-span-2">
         <input maxLength={200} className={inputClass} value={note} onChange={(e) => setNote(e.target.value)} placeholder="e.g. 12 months installment" />
       </Field>

@@ -82,6 +82,7 @@ function validInvestment(e: InvestmentEntry | undefined) {
     e.amount > 0 &&
     Object.hasOwn(INVEST_METHODS, e.method) &&
     (e.months === undefined || (Number.isInteger(e.months) && e.months >= 1 && e.months <= 60)) &&
+    (e.settled === undefined || (isMoney(e.settled) && e.settled < e.amount)) &&
     validPaidBy(e.paidBy, e.amount) &&
     (e.note === undefined || (typeof e.note === "string" && e.note.length <= 200))
   );

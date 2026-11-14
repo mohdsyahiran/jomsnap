@@ -136,6 +136,8 @@ export type Investment = {
   method: InvestMethod;
   /** Paid in instalments over this many months */
   months?: number;
+  /** Part of an instalment item paid off in one go (e.g. one owner's share); the rest is spread over the months */
+  settled?: number;
   /** How much each owner paid; missing on items nobody has filled in yet */
   paidBy?: Partial<Record<Partner, number>>;
   note?: string;

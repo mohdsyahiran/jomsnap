@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { categoryOf, PAY_METHODS } from "@/lib/constants";
 import { formatDate, formatRM, formatRM2, toISODate } from "@/lib/format";
+import { instalmentsOf } from "@/lib/instalments";
 import { buildLedger, exportLedgerCSV, type LedgerEntry } from "@/lib/ledger";
 import { useStore } from "@/lib/store";
 import { Button, Card, Empty, Field, Icon, inputClass, PanelHeader } from "../ui";
@@ -51,6 +52,7 @@ export function Money({
   const remove = (e: LedgerEntry) => {
     if (e.source.kind === "payment") return onOpenPayment(e.source.bookingId);
     if (e.source.kind === "cost") return onOpenBooking(e.source.bookingId);
+    if (e.source.kind === "instalment") return;
     if (confirm(`Delete "${e.label}" (${formatRM2(e.amount)})?`)) dispatch({ type: "deleteTxn", id: e.source.id });
   };
 
@@ -119,7 +121,10 @@ export function Money({
         />
       </div>
 
-      <BankCard recorded={cash} />
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+        <BankCard ledger={ledger} />
+        <InstalmentsCard />
+      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
         <InOutChart ledger={ledger} period={period} />
@@ -178,15 +183,21 @@ export function Money({
                     {e.type === "in" ? "+" : "−"}
                     {formatRM2(e.amount)}
                   </span>
-                  <button
-                    type="button"
-                    onClick={() => remove(e)}
-                    title={e.source.kind === "payment" ? "Open booking payments" : e.source.kind === "cost" ? "Open booking costs" : "Delete"}
-                    aria-label={e.source.kind === "payment" ? "Open booking payments" : e.source.kind === "cost" ? "Open booking costs" : "Delete"}
-                    className="w-8 h-8 inline-flex items-center justify-center rounded-lg text-outline hover:bg-surface-container-high hover:text-on-surface"
-                  >
-                    <Icon name={e.source.kind === "txn" ? "delete" : "open_in_new"} className="text-base" />
-                  </button>
+                  {e.source.kind === "instalment" ? (
+                    <span className="w-8 h-8 inline-flex items-center justify-center text-outline" title="Worked out from the ROI tab">
+                      <Icon name="autorenew" className="text-base" />
+                    </span>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => remove(e)}
+                      title={e.source.kind === "payment" ? "Open booking payments" : e.source.kind === "cost" ? "Open booking costs" : "Delete"}
+                      aria-label={e.source.kind === "payment" ? "Open booking payments" : e.source.kind === "cost" ? "Open booking costs" : "Delete"}
+                      className="w-8 h-8 inline-flex items-center justify-center rounded-lg text-outline hover:bg-surface-container-high hover:text-on-surface"
+                    >
+                      <Icon name={e.source.kind === "txn" ? "delete" : "open_in_new"} className="text-base" />
+                    </button>
+                  )}
                 </li>
               );
             })}
@@ -197,15 +208,25 @@ export function Money({
   );
 }
 
-/** The real bank balance next to what the records add up to; the gap is money not recorded yet */
-function BankCard({ recorded }: { recorded: number }) {
+/** The real bank balance next to what the records add up to, step by step; the gap is money not recorded yet */
+function BankCard({ ledger }: { ledger: LedgerEntry[] }) {
   const { data, dispatch } = useStore();
   const bank = data.bank;
   const [editing, setEditing] = useState(false);
   const [amount, setAmount] = useState<number | "">("");
   const [asOf, setAsOf] = useState("");
-  const gap = bank ? Math.round((recorded - bank.amount) * 100) / 100 : 0;
+  const total = (f: (e: LedgerEntry) => boolean) => ledger.reduce((s, e) => s + (f(e) ? e.amount : 0), 0);
+  const steps = [
+    { label: "Client payments", sub: "All payments recorded on bookings", amount: total((e) => e.source.kind === "payment"), sign: 1 },
+    { label: "Other money in", sub: "Money in entries, e.g. owner capital", amount: total((e) => e.type === "in" && e.source.kind === "txn"), sign: 1 },
+    { label: "Booking costs", sub: "Crew, transport, guestbook, designer… on each booking", amount: total((e) => e.source.kind === "cost"), sign: -1 },
+    { label: "Instalments paid so far", sub: "Worked out from the investments on the ROI tab", amount: total((e) => e.source.kind === "instalment"), sign: -1 },
+    { label: "Other money out", sub: "Money out entries added here", amount: total((e) => e.type === "out" && e.source.kind === "txn"), sign: -1 },
+  ];
+  const expected = steps.reduce((s, x) => s + x.sign * x.amount, 0);
+  const gap = bank ? Math.round((expected - bank.amount) * 100) / 100 : 0;
   const rm = (n: number) => `${n < 0 ? "−" : ""}${formatRM2(Math.abs(n))}`;
+  const matches = Math.abs(gap) < 1;
 
   const open = () => {
     setAmount(bank?.amount ?? "");
@@ -219,14 +240,14 @@ function BankCard({ recorded }: { recorded: number }) {
   };
 
   return (
-    <Card className="p-4 sm:p-6">
+    <Card className="lg:col-span-7 p-4 sm:p-6">
       <div className="flex flex-wrap items-start justify-between gap-3 mb-4">
         <div>
           <h3 className="text-headline-sm font-bold text-primary flex items-center gap-2">
             <Icon name="account_balance" className="text-secondary" />
-            Bank balance
+            Bank balance check
           </h3>
-          <p className="text-body-sm text-on-surface-variant">The business account&apos;s real balance, checked against all money in and out recorded here.</p>
+          <p className="text-body-sm text-on-surface-variant">What should be in the business account, step by step, against what is really there.</p>
         </div>
         {!editing && (
           <Button icon={bank ? "edit" : "add"} onClick={open}>
@@ -264,41 +285,104 @@ function BankCard({ recorded }: { recorded: number }) {
         </form>
       )}
 
-      {!bank ? (
-        !editing && <Empty icon="account_balance">Enter the balance from your bank app to see if the records match.</Empty>
-      ) : (
-        <>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <div className="rounded-xl bg-surface-container-low p-4">
-              <p className="text-label-md uppercase tracking-wide text-on-surface-variant">In the bank</p>
-              <p className="mt-1 text-headline-md font-bold tabular-nums text-primary">{rm(bank.amount)}</p>
-              <p className="text-label-md text-outline">
-                As of {formatDate(bank.asOf)}
-                {bank.by && ` · by ${bank.by}`}
-              </p>
-            </div>
-            <div className="rounded-xl bg-surface-container-low p-4">
-              <p className="text-label-md uppercase tracking-wide text-on-surface-variant">Records say</p>
-              <p className="mt-1 text-headline-md font-bold tabular-nums text-primary">{rm(recorded)}</p>
-              <p className="text-label-md text-outline">All money in minus money out</p>
-            </div>
-            <div className={`rounded-xl p-4 ${Math.abs(gap) < 1 ? "bg-tertiary-fixed text-on-tertiary-fixed" : "bg-secondary-fixed text-on-secondary-fixed"}`}>
-              <p className="text-label-md uppercase tracking-wide">Difference</p>
-              <p className="mt-1 text-headline-md font-bold tabular-nums">{Math.abs(gap) < 1 ? "Matches" : rm(Math.abs(gap))}</p>
-              <p className="text-label-md">
-                {Math.abs(gap) < 1 ? "Records and bank agree" : gap > 0 ? "Less in the bank than recorded" : "More in the bank than recorded"}
-              </p>
-            </div>
+      <dl className="text-body-sm divide-y divide-outline-variant/20">
+        {steps.map((x) => (
+          <div key={x.label} className={`flex items-start justify-between gap-3 py-2 ${x.amount ? "" : "text-outline"}`}>
+            <dt>
+              <span className={x.amount ? "text-on-surface" : ""}>{x.label}</span>
+              <span className="block text-label-md text-outline">{x.sub}</span>
+            </dt>
+            <dd className={`tabular-nums font-semibold ${x.amount ? (x.sign > 0 ? "text-tertiary" : "text-error") : ""}`}>
+              {x.sign > 0 ? "+" : "−"}
+              {formatRM2(x.amount)}
+            </dd>
           </div>
-          {Math.abs(gap) >= 1 && (
-            <p className="mt-3 text-body-sm text-on-surface-variant">
-              {gap > 0
-                ? "Usually expenses or instalments paid from the account that aren't recorded yet, or client payments that went to another account. Add them under Money out until this matches."
-                : "Usually money that came into the account without being recorded, e.g. owner capital or a payment not yet entered. Add it under Money in until this matches."}
-            </p>
-          )}
-        </>
+        ))}
+        <div className="flex items-center justify-between gap-3 py-2.5 text-body-md font-bold text-primary">
+          <dt>Should be in the bank</dt>
+          <dd className="tabular-nums">{rm(expected)}</dd>
+        </div>
+        {bank && (
+          <>
+            <div className="flex items-center justify-between gap-3 py-2.5 text-body-md font-bold text-primary">
+              <dt>
+                Actually in the bank
+                <span className="block text-label-md font-normal text-outline">
+                  As of {formatDate(bank.asOf)}
+                  {bank.by && ` · by ${bank.by}`}
+                </span>
+              </dt>
+              <dd className="tabular-nums">{rm(bank.amount)}</dd>
+            </div>
+            <div className={`flex items-center justify-between gap-3 p-3 rounded-xl ${matches ? "bg-tertiary-fixed text-on-tertiary-fixed" : "bg-secondary-fixed text-on-secondary-fixed"}`}>
+              <dt className="font-semibold">
+                {matches ? "Matches" : gap > 0 ? "Not recorded: less in the bank" : "Not recorded: more in the bank"}
+              </dt>
+              <dd className="tabular-nums text-headline-sm font-bold">{matches ? "✓" : formatRM2(Math.abs(gap))}</dd>
+            </div>
+          </>
+        )}
+      </dl>
+      {!bank && !editing && <p className="mt-3 text-body-sm text-on-surface-variant">Enter the balance from your bank app to see if the records match.</p>}
+      {bank && !matches && (
+        <p className="mt-3 text-body-sm text-on-surface-variant">
+          {gap > 0
+            ? "Money left the account without being recorded, or a client paid into another account. Check the bank statement for payments not listed below (e.g. items bought from this account, transfers to an owner) and add them under Money out."
+            : "Money came into the account without being recorded, e.g. owner capital. Add it under Money in."}
+        </p>
       )}
+    </Card>
+  );
+}
+
+/** Instalments still running on investments, from the ROI tab */
+function InstalmentsCard() {
+  const { data } = useStore();
+  const today = toISODate(new Date());
+  const running = data.investments
+    .map((i) => ({ i, plan: instalmentsOf(i, today) }))
+    .filter((x): x is { i: (typeof data.investments)[number]; plan: NonNullable<ReturnType<typeof instalmentsOf>> } => !!x.plan && x.plan.left > 0)
+    .sort((a, b) => (a.plan.nextDue ?? "").localeCompare(b.plan.nextDue ?? ""));
+  const left = running.reduce((s, x) => s + x.plan.left, 0);
+  const monthly = running.reduce((s, x) => s + x.plan.monthly, 0);
+
+  return (
+    <Card className="lg:col-span-5 p-4 sm:p-6">
+      <h3 className="text-headline-sm font-bold text-primary flex items-center gap-2 mb-4">
+        <Icon name="credit_card" className="text-secondary" />
+        Pending instalments
+      </h3>
+      <div className="grid grid-cols-2 gap-3 mb-4">
+        <div className="rounded-xl bg-secondary-fixed p-3 text-on-secondary-fixed">
+          <p className="text-label-md uppercase tracking-wide">Left to pay</p>
+          <p className="mt-1 text-headline-sm font-bold tabular-nums">{formatRM2(left)}</p>
+        </div>
+        <div className="rounded-xl bg-surface-container-low p-3">
+          <p className="text-label-md uppercase tracking-wide text-on-surface-variant">Each month</p>
+          <p className="mt-1 text-headline-sm font-bold tabular-nums text-primary">{formatRM2(monthly)}</p>
+        </div>
+      </div>
+      {running.length === 0 ? (
+        <Empty icon="credit_card">No instalments running.</Empty>
+      ) : (
+        <ul className="divide-y divide-outline-variant/20 text-body-sm">
+          {running.map(({ i, plan }) => (
+            <li key={i.id} className="flex items-start justify-between gap-3 py-2">
+              <div className="min-w-0">
+                <p className="font-semibold text-on-surface truncate">{i.item}</p>
+                <p className="text-label-md text-outline">
+                  {formatRM2(plan.monthly)}/mo · {plan.paid} of {plan.months} paid
+                  {plan.nextDue && ` · next ${formatDate(plan.nextDue, { day: "numeric", month: "short" })}`}
+                </p>
+              </div>
+              <span className="tabular-nums font-semibold text-secondary whitespace-nowrap">{formatRM2(plan.left)}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+      <p className="mt-3 text-label-md text-outline">
+        Counted as paid from the business account once each due date passes. Change items on the ROI tab.
+      </p>
     </Card>
   );
 }

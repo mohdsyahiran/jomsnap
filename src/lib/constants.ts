@@ -71,9 +71,11 @@ export const MONEY_IN_CATEGORIES = [
 
 // No longer offered, but kept so older entries still show a proper name
 const RETIRED_CATEGORIES = [{ id: "toll", label: "Toll & parking", icon: "toll" }];
+// Worked out automatically, so not offered when adding money out
+const AUTO_CATEGORIES = [{ id: "instalment", label: "Instalment", icon: "credit_card" }];
 
 export function categoryOf(id: string) {
-  return [...MONEY_OUT_CATEGORIES, ...MONEY_IN_CATEGORIES, ...RETIRED_CATEGORIES].find((c) => c.id === id) ?? { id, label: id, icon: "sell" };
+  return [...MONEY_OUT_CATEGORIES, ...MONEY_IN_CATEGORIES, ...RETIRED_CATEGORIES, ...AUTO_CATEGORIES].find((c) => c.id === id) ?? { id, label: id, icon: "sell" };
 }
 
 export const PAY_METHODS = { transfer: "Bank transfer", duitnow: "DuitNow QR", cash: "Cash", other: "Other", paylater: "PayLater" } as const;

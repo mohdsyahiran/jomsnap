@@ -31,7 +31,7 @@ export type Action =
   | { type: "setCostPerEvent"; amount: number }
   | { type: "setBank"; amount: number; asOf: string };
 
-export type InvestmentEntry = Pick<Investment, "date" | "item" | "amount" | "method" | "months" | "paidBy" | "note">;
+export type InvestmentEntry = Pick<Investment, "date" | "item" | "amount" | "method" | "months" | "settled" | "paidBy" | "note">;
 
 /** Who made the change; set on the server from the signed-in session */
 export type Stamped = Action & { by?: string };
@@ -299,8 +299,8 @@ export function reducer(data: AdminData, action: Stamped): AdminData {
       const inv = data.investments.find((x) => x.id === action.id);
       if (!inv) return data;
       // Replace every editable field, so a cleared one (e.g. note) doesn't linger
-      const { months, paidBy, note, ...rest } = action.entry;
-      const updated: Investment = { id: inv.id, by: inv.by, createdAt: inv.createdAt, ...rest, months, paidBy, note };
+      const { months, settled, paidBy, note, ...rest } = action.entry;
+      const updated: Investment = { id: inv.id, by: inv.by, createdAt: inv.createdAt, ...rest, months, settled, paidBy, note };
       return {
         ...data,
         investments: data.investments.map((x) => (x.id === inv.id ? updated : x)),
